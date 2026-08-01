@@ -1,4 +1,7 @@
-# Python
+__pycache__/
+*.pyc
+.venv/
+logs/*.log# Python
 __pycache__/
 *.py[cod]
 *.pyo
