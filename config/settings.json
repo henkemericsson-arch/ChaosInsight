@@ -1,0 +1,15 @@
+{
+    "application": {
+        "name": "Chaos Insight",
+        "version": "0.2.0"
+    },
+
+    "logging": {
+        "enabled": true,
+        "level": "INFO"
+    },
+
+    "plugins": {
+        "autoload": true
+    }
+}

@@ -1,0 +1,20 @@
+{
+    "id": "horse_form",
+    "name": "Hästens form",
+    "category": "horse",
+    "description": "Bedömning av hästens aktuella form.",
+    "enabled": true,
+    "weight": 8.5,
+    "minimum": 0,
+    "maximum": 10,
+    "calculation": "last5",
+    "confidence": 1.0,
+    "last_updated": null,
+    "engines": [
+        "statistics",
+        "chaos",
+        "crowd",
+        "montecarlo"
+    ],
+    "version": "1.0"
+}
