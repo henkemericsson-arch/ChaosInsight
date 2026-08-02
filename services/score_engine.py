@@ -12,25 +12,38 @@ class ScoreEngine:
 
             info = self.knowledge.load("horses", horse.name)
 
+            speed = horse.get_metric("speed")
+            form = horse.get_metric("form")
+            stamina = horse.get_metric("stamina")
+            risk = horse.get_metric("risk")
+            driver = horse.get_metric("driver_score")
+            trainer = horse.get_metric("trainer_score")
+            horse_score = horse.get_metric("horse_score")
+
             if info:
 
                 win_percent = info.get("win_percent", 0)
 
                 score = (
-                    horse.get_metric("speed") * 0.30 +
-                    horse.get_metric("form") * 0.25 +
-                    horse.get_metric("stamina") * 0.20 +
-                    win_percent * 0.25 -
-                    horse.get_metric("risk") * 0.10
+                    speed * 0.20 +
+                    form * 0.15 +
+                    stamina * 0.15 +
+                    driver * 0.15 +
+                    trainer * 0.10 +
+                    horse_score * 0.15 +
+                    win_percent * 0.20 -
+                    risk * 0.10
                 )
 
             else:
 
                 score = (
-                    horse.get_metric("speed") * 0.35 +
-                    horse.get_metric("form") * 0.30 +
-                    horse.get_metric("stamina") * 0.20 -
-                    horse.get_metric("risk") * 0.15
+                    speed * 0.25 +
+                    form * 0.20 +
+                    stamina * 0.20 +
+                    driver * 0.20 +
+                    trainer * 0.15 -
+                    risk * 0.10
                 )
 
             horse.set_metric("score", round(score, 2))

@@ -2,9 +2,9 @@ from analysis.modules.base_analyzer import BaseAnalyzer
 from services.knowledge_base import KnowledgeBase
 
 
-class DriverAnalyzer(BaseAnalyzer):
+class TrainerAnalyzer(BaseAnalyzer):
 
-    name = "Kuskanalys"
+    name = "Tränaranalys"
 
     def __init__(self):
         self.kb = KnowledgeBase()
@@ -12,11 +12,11 @@ class DriverAnalyzer(BaseAnalyzer):
     def analyze(self, race):
 
         print()
-        print("=== Kuskanalys ===")
+        print("=== Tränaranalys ===")
 
         for horse in race.horses:
 
-            info = self.kb.driver(horse.driver)
+            info = self.kb.trainer(horse.trainer)
 
             if info:
 
@@ -26,25 +26,25 @@ class DriverAnalyzer(BaseAnalyzer):
                 )
 
                 horse.set_metric(
-                    "driver_score",
+                    "trainer_score",
                     round(score, 2)
                 )
 
                 print(
                     f"{horse.number:2}. "
-                    f"{horse.driver:<25}"
-                    f"{horse.get_metric('driver_score'):>6}"
+                    f"{horse.trainer:<25}"
+                    f"{horse.get_metric('trainer_score'):>6}"
                 )
 
             else:
 
                 horse.set_metric(
-                    "driver_score",
+                    "trainer_score",
                     0
                 )
 
                 print(
                     f"{horse.number:2}. "
-                    f"{horse.driver:<25}"
+                    f"{horse.trainer:<25}"
                     " saknas i databasen"
                 )

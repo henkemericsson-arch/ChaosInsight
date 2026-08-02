@@ -29,6 +29,13 @@ class DataLoader:
                     name=horse["name"],
                     driver=horse.get("driver", ""),
                     trainer=horse.get("trainer", ""),
+                    start_position=horse.get(
+                        "start_position",
+                        horse.get("number")
+                    ),
+                    odds=horse.get("odds"),
+                    age=horse.get("age"),
+                    sex=horse.get("sex"),
                 )
             )
 

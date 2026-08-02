@@ -1,25 +1,45 @@
-import random
+from analysis.modules.base_analyzer import BaseAnalyzer
 
 
-class BasicMetricsAnalyzer:
+class BasicMetricsAnalyzer(BaseAnalyzer):
+
+    name = "Grunddata"
 
     def analyze(self, race):
 
         print()
-        print("=== Grundanalys ===")
+        print("=== Grunddata ===")
 
         for horse in race.horses:
 
-            horse.set_metric("speed", random.randint(70, 100))
-            horse.set_metric("form", random.randint(70, 100))
-            horse.set_metric("stamina", random.randint(70, 100))
-            horse.set_metric("risk", random.randint(0, 30))
+            horse.set_metric(
+                "start_position",
+                horse.start_position
+            )
+
+            horse.set_metric(
+                "distance",
+                race.distance
+            )
+
+            horse.set_metric(
+                "track",
+                race.track
+            )
+
+            horse.set_metric(
+                "driver",
+                horse.driver
+            )
+
+            horse.set_metric(
+                "trainer",
+                horse.trainer
+            )
 
             print(
-                f"{horse.number:2}. "
-                f"{horse.name:20}"
-                f" Speed:{horse.get_metric('speed'):3}"
-                f" Form:{horse.get_metric('form'):3}"
-                f" Stamina:{horse.get_metric('stamina'):3}"
-                f" Risk:{horse.get_metric('risk'):3}"
+                f"{horse.name:20} "
+                f"Spår:{horse.get_metric('start_position'):>2}  "
+                f"Distans:{horse.get_metric('distance')}m  "
+                f"Kusk:{horse.get_metric('driver')}"
             )
