@@ -1,33 +1,27 @@
-"""
-Chaos Insight
-Race Model
-Release 0.3.0
-"""
-
-from dataclasses import dataclass, field
-
 from models.horse import Horse
 
 
-@dataclass
 class Race:
+    def __init__(
+        self,
+        track: str,
+        date: str,
+        race_number: int,
+        distance: int,
+        start_method: str,
+        horses: list[Horse],
+    ):
+        self.track = track
+        self.date = date
+        self.race_number = race_number
+        self.distance = distance
+        self.start_method = start_method
+        self.horses = horses
 
-    race_id: str
-
-    date: str
-
-    track: str
-
-    distance: int
-
-    start_method: str
-
-    horses: list[Horse] = field(default_factory=list)
-
-    def add_horse(self, horse: Horse):
-
-        self.horses.append(horse)
-
-    def horse_count(self):
-
-        return len(self.horses)
+    def __repr__(self):
+        return (
+            f"Race("
+            f"{self.track}, "
+            f"V{self.race_number}, "
+            f"{len(self.horses)} hästar)"
+        )

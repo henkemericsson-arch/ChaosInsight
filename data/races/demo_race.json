@@ -1,0 +1,27 @@
+{
+  "race": {
+    "track": "Solvalla",
+    "date": "2026-08-01",
+    "race_number": 1,
+    "distance": 2140,
+    "start_method": "Auto"
+  },
+
+  "horses": [
+
+    {
+      "number": 1,
+      "name": "Readly Express",
+      "driver": "Örjan Kihlström",
+      "trainer": "Daniel Redén"
+    },
+
+    {
+      "number": 2,
+      "name": "Francesco Zet",
+      "driver": "Magnus A Djuse",
+      "trainer": "Daniel Redén"
+    }
+
+  ]
+}

@@ -1,4 +1,4 @@
-from core.engine import CoreEngine
+from core.cli import app
 
-engine = CoreEngine()
-engine.start()
+if __name__ == "__main__":
+    app()

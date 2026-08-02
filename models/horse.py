@@ -1,35 +1,22 @@
-"""
-Chaos Insight
-Horse Model
-Release 0.3.0
-"""
-
-from dataclasses import dataclass
-
-from models.driver import Driver
-from models.trainer import Trainer
-
-
-@dataclass
 class Horse:
-    id: str
-    number: int
-    name: str
-    driver: Driver
-    trainer: Trainer
 
-    def to_dict(self):
+    def __init__(
+        self,
+        number,
+        name,
+        driver="",
+        trainer=""
+    ):
+        self.number = number
+        self.name = name
+        self.driver = driver
+        self.trainer = trainer
 
-        return {
+        self.metrics = {}
+        self.score = 0.0
 
-            "id": self.id,
+    def set_metric(self, key, value):
+        self.metrics[key] = value
 
-            "number": self.number,
-
-            "name": self.name,
-
-            "driver": self.driver.to_dict(),
-
-            "trainer": self.trainer.to_dict()
-
-        }
+    def get_metric(self, key):
+        return self.metrics.get(key, 0)
