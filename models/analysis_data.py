@@ -17,6 +17,15 @@ class AnalysisData:
 
         self.track = None
 
+        self.distance = None
+
+        #
+        # De faktiska loppen i spelet, med hästar,
+        # fyllda av AnalysisDataCollector via RaceParser.
+        #
+
+        self.races = []
+
         self.horses = []
 
         self.drivers = []

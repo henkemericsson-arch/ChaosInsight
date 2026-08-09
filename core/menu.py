@@ -1,4 +1,5 @@
 from services.race_collector import RaceCollector
+from config.bet_types import SYSTEM_BET_TYPES
 
 
 class MainMenu:
@@ -49,10 +50,34 @@ class MainMenu:
         #
         # Visa spel
         #
+        # Endast flerloppsspel (V86, V75, V65, V64, V5, V4, V3,
+        # Dagens Dubbel) visas, eftersom det bara är dessa som
+        # ett spelsystem kan byggas för. Enloppsspel som Vinnare,
+        # Plats, Trio osv. filtreras bort här.
+        #
+
+        system_games = [
+            game
+            for game in selected_track.games
+            if game.name.upper() in SYSTEM_BET_TYPES
+        ]
+
+        if not system_games:
+
+            print(f"\nInga flerloppsspel hittades på {selected_track.name}.")
+            print("Speltyper som faktiskt hittades för banan:")
+
+            if selected_track.games:
+                for game in selected_track.games:
+                    print(f"  - '{game.name}'  (id: {game.id})")
+            else:
+                print("  (inga spel alls hittades för banan)")
+
+            return None
 
         print(f"\nSpel på {selected_track.name}\n")
 
-        for i, game in enumerate(selected_track.games, start=1):
+        for i, game in enumerate(system_games, start=1):
 
             print(f"{i}. {game.name}")
 
@@ -60,7 +85,7 @@ class MainMenu:
 
         game_choice = int(input("Välj spel: "))
 
-        selected_game = selected_track.games[game_choice - 1]
+        selected_game = system_games[game_choice - 1]
 
         print()
 

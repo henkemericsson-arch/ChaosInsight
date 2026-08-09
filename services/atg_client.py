@@ -1,4 +1,4 @@
-from config.atg import BASE_URL, HEADERS
+from config.atg import RACINGINFO_BASE_URL, CALENDAR_BASE_URL, HEADERS
 
 from services.http_client import HttpClient
 
@@ -15,22 +15,23 @@ class ATGClient:
 
     def get_calendar(self, date):
 
-        url = f"{BASE_URL}/calendar/day/{date}"
+        url = f"{CALENDAR_BASE_URL}/calendar/day/{date}"
 
         data = self.http.get(
             url=url,
             headers=HEADERS,
+            params={"headToHeadEnabled": "true"},
         )
 
         return self.calendar_parser.parse(data)
 
-    def get_game(self, game):
+    def get_game(self, game_id):
 
-        url = f"{BASE_URL}/..."
+        url = f"{RACINGINFO_BASE_URL}/games/{game_id}"
 
         data = self.http.get(
             url=url,
             headers=HEADERS,
         )
 
-        return datame
+        return data
