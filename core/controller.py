@@ -1,6 +1,7 @@
 from core.menu import MainMenu
 
 from services.analysis_data_collector import AnalysisDataCollector
+from services.score_engine import ScoreEngine
 
 from analysis.analysis_engine import AnalysisEngine
 from analysis.register_modules import register_modules
@@ -15,6 +16,8 @@ class Controller:
         self.analysis_collector = AnalysisDataCollector()
 
         self.analysis_engine = AnalysisEngine()
+
+        self.score_engine = ScoreEngine()
 
         register_modules(self.analysis_engine)
 
@@ -32,6 +35,16 @@ class Controller:
         analysis_data = self.analysis_engine.analyze(
             analysis_data
         )
+
+        #
+        # OBS: Total Score räknas just nu bara för det
+        # första loppet i spelet (analysis_data.horses).
+        # Att göra samma sak för alla lopp i systemet
+        # (analysis_data.races) är nästa steg, tillsammans
+        # med System Generator.
+        #
+
+        self.score_engine.calculate(analysis_data)
 
         print()
         print("=" * 60)

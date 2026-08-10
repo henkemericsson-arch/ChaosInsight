@@ -1,49 +1,52 @@
-from services.knowledge_base import KnowledgeBase
-
-
 class ScoreEngine:
 
-    def __init__(self):
-        self.knowledge = KnowledgeBase()
+    #
+    # Kombinerar CrowdIndex och KaosIndex till ett Total
+    # Score per häst, enligt KAMT-modellens grundformel:
+    #
+    #   Total Score = 0,50 x CrowdIndex + 0,50 x KaosIndex
+    #
+    # ScoreEngine gör ingen egen analys, den bara väger
+    # samman metrics som redan satts av CrowdEngine och
+    # ChaosEngine.
+    #
+
+    CROWD_WEIGHT = 0.50
+    CHAOS_WEIGHT = 0.50
 
     def calculate(self, race):
 
         for horse in race.horses:
 
-            info = self.knowledge.load("horses", horse.name)
+            crowd_index = horse.get_metric("crowd_index")
+            chaos_index = horse.get_metric("chaos_index")
 
-            speed = horse.get_metric("speed")
-            form = horse.get_metric("form")
-            stamina = horse.get_metric("stamina")
-            risk = horse.get_metric("risk")
-            driver = horse.get_metric("driver_score")
-            trainer = horse.get_metric("trainer_score")
-            horse_score = horse.get_metric("horse_score")
+            total_score = (
+                (crowd_index * self.CROWD_WEIGHT)
+                + (chaos_index * self.CHAOS_WEIGHT)
+            )
 
-            if info:
+            horse.set_metric("total_score", round(total_score, 1))
 
-                win_percent = info.get("win_percent", 0)
+        self._print_ranking(race)
 
-                score = (
-                    speed * 0.20 +
-                    form * 0.15 +
-                    stamina * 0.15 +
-                    driver * 0.15 +
-                    trainer * 0.10 +
-                    horse_score * 0.15 +
-                    win_percent * 0.20 -
-                    risk * 0.10
-                )
+    @staticmethod
+    def _print_ranking(race):
 
-            else:
+        ranked_horses = sorted(
+            race.horses,
+            key=lambda h: h.get_metric("total_score"),
+            reverse=True,
+        )
 
-                score = (
-                    speed * 0.25 +
-                    form * 0.20 +
-                    stamina * 0.20 +
-                    driver * 0.20 +
-                    trainer * 0.15 -
-                    risk * 0.10
-                )
+        print()
+        print("=== Total Score (rankning) ===")
 
-            horse.set_metric("score", round(score, 2))
+        for placement, horse in enumerate(ranked_horses, start=1):
+
+            print(
+                f"{placement:>2}. {horse.number:>2}. {horse.name:<20} "
+                f"CI: {horse.get_metric('crowd_index'):<6} "
+                f"KI: {horse.get_metric('chaos_index'):<6} "
+                f"Total Score: {horse.get_metric('total_score')}"
+            )
