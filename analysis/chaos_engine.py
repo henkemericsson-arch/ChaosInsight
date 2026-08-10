@@ -52,6 +52,7 @@ class ChaosEngine(BaseAnalyzer):
             horse.set_metric("chaos_index", round(chaos_index, 1))
 
         kaosvarde = self._calculate_kaosvarde(horses)
+        race.kaosvarde = kaosvarde
 
         print()
         print("=== Kaosanalys ===")
