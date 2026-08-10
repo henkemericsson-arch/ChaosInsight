@@ -1,4 +1,9 @@
-class CrowdEngine:
+from analysis.modules.base_analyzer import BaseAnalyzer
+
+
+class CrowdEngine(BaseAnalyzer):
+
+    name = "Crowdanalys"
 
     #
     # Wisdom of the Crowd - Crowd Index (CI)
