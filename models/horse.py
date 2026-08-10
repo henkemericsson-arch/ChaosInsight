@@ -8,6 +8,8 @@ class Horse:
         trainer="",
         start_position=None,
         odds=None,
+        bet_percentage=None,
+        odds_trend=None,
         age=None,
         sex=None,
     ):
@@ -20,6 +22,8 @@ class Horse:
 
         self.start_position = start_position
         self.odds = odds
+        self.bet_percentage = bet_percentage
+        self.odds_trend = odds_trend
         self.age = age
         self.sex = sex
 
