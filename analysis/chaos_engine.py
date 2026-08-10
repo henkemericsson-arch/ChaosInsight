@@ -23,21 +23,26 @@ class ChaosEngine(BaseAnalyzer):
     #                           -----
     #   Summa KI                 50 %
     #
-    # I den här prototypen finns bara startspår som riktig
-    # data. Kuskform, hästform, stallform, distansstatistik,
+    # I den här prototypen finns riktig data för startspår,
+    # kuskform (kuskens vinstprocent innevarande år) och
+    # hästens dagsform (hästens egen vinstprocent innevarande
+    # år). Stallform (tränarens vinstprocent finns också
+    # insamlad men används inte här än), distansstatistik,
     # bana/underlag, galopprisk och tempoanalys kräver mer
-    # historik än vad som samlas in än. Häst-KaosIndex räknas
-    # därför just nu bara på startspår.
+    # historik än vad som samlas in än.
     #
     # TODO när fler datakällor kopplas in:
-    #   - kuskform (kuskens statistik finns delvis i rådata
-    #     från ATG men parsas inte än)
-    #   - hästens dagsform / stallform
+    #   - stallform (tränarens statistik finns redan i
+    #     Horse-objektet som trainer_win_pct)
     #   - distansstatistik
     #   - bana/underlag
     #   - galopprisk
     #   - tempoanalys
     #
+
+    START_POSITION_WEIGHT = 8
+    DRIVER_FORM_WEIGHT = 8
+    HORSE_FORM_WEIGHT = 10
 
     def analyze(self, race):
 
@@ -45,13 +50,28 @@ class ChaosEngine(BaseAnalyzer):
 
         position_scores = self._score_start_positions(horses)
 
+        total_weight = (
+            self.START_POSITION_WEIGHT
+            + self.DRIVER_FORM_WEIGHT
+            + self.HORSE_FORM_WEIGHT
+        )
+
         for horse in horses:
 
-            chaos_index = position_scores.get(horse.number, 0)
+            position_score = position_scores.get(horse.number, 0)
+            driver_score = horse.driver_win_pct or 0
+            horse_score = horse.horse_win_pct or 0
+
+            chaos_index = (
+                (position_score * self.START_POSITION_WEIGHT)
+                + (driver_score * self.DRIVER_FORM_WEIGHT)
+                + (horse_score * self.HORSE_FORM_WEIGHT)
+            ) / total_weight
 
             horse.set_metric("chaos_index", round(chaos_index, 1))
 
         kaosvarde = self._calculate_kaosvarde(horses)
+
         race.kaosvarde = kaosvarde
 
         print()

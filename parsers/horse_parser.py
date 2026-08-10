@@ -29,6 +29,13 @@ class HorseParser:
         age = horse_data.get("age")
         sex = horse_data.get("sex")
 
+        driver_win_pct, driver_starts = self._extract_form(driver_data)
+        trainer_win_pct, trainer_starts = self._extract_form(trainer_data)
+        horse_win_pct, horse_starts = self._extract_form(horse_data)
+
+        shod_front, shod_back, shoe_changed = self._extract_shoes(horse_data)
+        sulky_changed = self._extract_sulky_changed(horse_data)
+
         return Horse(
             number=number,
             name=name,
@@ -40,6 +47,16 @@ class HorseParser:
             odds_trend=odds_trend,
             age=age,
             sex=sex,
+            driver_win_pct=driver_win_pct,
+            driver_starts=driver_starts,
+            trainer_win_pct=trainer_win_pct,
+            trainer_starts=trainer_starts,
+            horse_win_pct=horse_win_pct,
+            horse_starts=horse_starts,
+            shod_front=shod_front,
+            shod_back=shod_back,
+            shoe_changed=shoe_changed,
+            sulky_changed=sulky_changed,
         )
 
     @staticmethod
@@ -110,3 +127,69 @@ class HorseParser:
                 return pool.get("trend")
 
         return None
+
+    @staticmethod
+    def _extract_form(person_or_horse_data):
+
+        #
+        # Hämtar aktuell form (vinstprocent och antal
+        # starter) från statistics.years, baserat på det
+        # senaste tillgängliga året. Funkar likadant för
+        # kusk, tränare och häst, som alla har samma
+        # statistics-struktur i ATG:s rådata.
+        #
+
+        years = (
+            person_or_horse_data.get("statistics", {}).get("years", {})
+        )
+
+        if not years:
+            return None, None
+
+        latest_year = max(years.keys())
+
+        year_stats = years[latest_year]
+
+        starts = year_stats.get("starts")
+
+        if not starts:
+            return None, starts
+
+        wins = year_stats.get("placement", {}).get("1", 0)
+
+        win_pct = round((wins / starts) * 100, 1)
+
+        return win_pct, starts
+
+    @staticmethod
+    def _extract_shoes(horse_data):
+
+        shoes = horse_data.get("shoes") or {}
+
+        if not shoes.get("reported"):
+            return None, None, None
+
+        front = shoes.get("front", {})
+        back = shoes.get("back", {})
+
+        shod_front = front.get("hasShoe")
+        shod_back = back.get("hasShoe")
+
+        shoe_changed = bool(
+            front.get("changed") or back.get("changed")
+        )
+
+        return shod_front, shod_back, shoe_changed
+
+    @staticmethod
+    def _extract_sulky_changed(horse_data):
+
+        sulky = horse_data.get("sulky") or {}
+
+        if not sulky.get("reported"):
+            return None
+
+        type_changed = sulky.get("type", {}).get("changed", False)
+        colour_changed = sulky.get("colour", {}).get("changed", False)
+
+        return bool(type_changed or colour_changed)
