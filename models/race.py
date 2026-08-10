@@ -10,6 +10,7 @@ class Race:
         distance: int,
         start_method: str,
         horses: list[Horse],
+        start_time: str = None,
     ):
         self.track = track
         self.date = date
@@ -17,6 +18,7 @@ class Race:
         self.distance = distance
         self.start_method = start_method
         self.horses = horses
+        self.start_time = start_time
 
     def __repr__(self):
         return (

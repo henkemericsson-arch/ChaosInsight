@@ -84,6 +84,14 @@ class HorseParser:
             return None
 
         #
+        # ATG använder 9999 som sentinelvärde för "inga
+        # odds satta", inte ett riktigt odds.
+        #
+
+        if raw_odds == 9999:
+            return None
+
+        #
         # ATG anger odds i hundradelar,
         # t.ex. 2648 motsvarar 26.48 i odds.
         #

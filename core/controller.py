@@ -75,6 +75,8 @@ class Controller:
         print(f"Antal spikar        : {selection['spikes']}")
         print(f"Antal lås           : {selection['locks']}")
 
+        self._print_weather(analysis_data.weather)
+
         self.system_generator.generate(
             races=analysis_data.races,
             max_cost=selection["max_cost"],
@@ -82,3 +84,19 @@ class Controller:
             spikes=selection["spikes"],
             locks=selection["locks"],
         )
+
+    @staticmethod
+    def _print_weather(weather):
+
+        print()
+        print("=== Väder ===")
+
+        if weather is None:
+            print("Ingen väderdata tillgänglig för banan.")
+            return
+
+        print(f"Tidpunkt (UTC)       : {weather.get('valid_time')}")
+        print(f"Temperatur           : {weather.get('temperature_c')} °C")
+        print(f"Vindstyrka           : {weather.get('wind_speed_ms')} m/s")
+        print(f"Nederbörd            : {weather.get('precipitation_mm')} mm")
+        print(f"Vädersymbol (SMHI)   : {weather.get('weather_symbol')}")
