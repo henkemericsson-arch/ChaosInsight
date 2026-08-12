@@ -24,16 +24,13 @@ class ChaosEngine(BaseAnalyzer):
     #   Summa KI                 50 %
     #
     # I den här prototypen finns riktig data för startspår,
-    # kuskform (kuskens vinstprocent innevarande år) och
+    # kuskform (kuskens vinstprocent innevarande år),
     # hästens dagsform (hästens egen vinstprocent innevarande
-    # år). Stallform (tränarens vinstprocent finns också
-    # insamlad men används inte här än), distansstatistik,
-    # bana/underlag, galopprisk och tempoanalys kräver mer
-    # historik än vad som samlas in än.
+    # år) och stallform (tränarens vinstprocent innevarande
+    # år). Distansstatistik, bana/underlag, galopprisk och
+    # tempoanalys kräver mer historik än vad som samlas in än.
     #
     # TODO när fler datakällor kopplas in:
-    #   - stallform (tränarens statistik finns redan i
-    #     Horse-objektet som trainer_win_pct)
     #   - distansstatistik
     #   - bana/underlag
     #   - galopprisk
@@ -43,6 +40,7 @@ class ChaosEngine(BaseAnalyzer):
     START_POSITION_WEIGHT = 8
     DRIVER_FORM_WEIGHT = 8
     HORSE_FORM_WEIGHT = 10
+    TRAINER_FORM_WEIGHT = 5
 
     def analyze(self, race):
 
@@ -54,6 +52,7 @@ class ChaosEngine(BaseAnalyzer):
             self.START_POSITION_WEIGHT
             + self.DRIVER_FORM_WEIGHT
             + self.HORSE_FORM_WEIGHT
+            + self.TRAINER_FORM_WEIGHT
         )
 
         for horse in horses:
@@ -61,11 +60,13 @@ class ChaosEngine(BaseAnalyzer):
             position_score = position_scores.get(horse.number, 0)
             driver_score = horse.driver_win_pct or 0
             horse_score = horse.horse_win_pct or 0
+            trainer_score = horse.trainer_win_pct or 0
 
             chaos_index = (
                 (position_score * self.START_POSITION_WEIGHT)
                 + (driver_score * self.DRIVER_FORM_WEIGHT)
                 + (horse_score * self.HORSE_FORM_WEIGHT)
+                + (trainer_score * self.TRAINER_FORM_WEIGHT)
             ) / total_weight
 
             horse.set_metric("chaos_index", round(chaos_index, 1))
