@@ -6,14 +6,21 @@ from config.track_locations import TRACK_LOCATIONS
 class WeatherClient:
 
     #
-    # Hämtar väderprognos från SMHI:s öppna API
-    # (öppen data, ingen nyckel krävs).
+    # Hämtar väderprognos från SMHI:s öppna API, SNOW1gv1.
+    #
+    # OBS: SMHI lade ner det äldre PMP3gv2-API:et 2026-03-31
+    # (gav 404) och ersatte det med SNOW1gv1, som har både
+    # annan URL och annan datastruktur (platt data-objekt med
+    # läsbara parameternamn istället för en lista med korta
+    # koder som t/ws/Wsymb2).
     #
     # Dokumentation:
-    # https://opendata.smhi.se/apidocs/metfcst/
+    # https://opendata.smhi.se/metfcst/snow1gv1
     #
 
     BASE_URL = "https://opendata-download-metfcst.smhi.se/api"
+
+    MISSING_VALUE = 9999
 
     def __init__(self):
 
@@ -40,19 +47,19 @@ class WeatherClient:
         lat, lon = coordinates
 
         url = (
-            f"{self.BASE_URL}/category/pmp3g/version/2/geotype/point/"
+            f"{self.BASE_URL}/category/snow1g/version/1/geotype/point/"
             f"lon/{lon}/lat/{lat}/data.json"
         )
 
         try:
             data = self.http.get(url=url, headers={})
-        except Exception:
+        except Exception as e:
+            print(f"[DEBUG] SMHI-anrop misslyckades: {e!r}")
             return None
 
         return self._parse_forecast(data, when)
 
-    @staticmethod
-    def _parse_forecast(data, when):
+    def _parse_forecast(self, data, when):
 
         time_series = data.get("timeSeries", [])
 
@@ -65,22 +72,32 @@ class WeatherClient:
             time_series,
             key=lambda entry: abs(
                 datetime.fromisoformat(
-                    entry["validTime"].replace("Z", "+00:00")
+                    entry["time"].replace("Z", "+00:00")
                 )
                 - target_time
             ),
         )
 
-        parameters = {
-            p["name"]: p["values"][0]
-            for p in closest_entry.get("parameters", [])
-            if p.get("values")
-        }
+        values = closest_entry.get("data", {})
 
         return {
-            "valid_time": closest_entry.get("validTime"),
-            "temperature_c": parameters.get("t"),
-            "wind_speed_ms": parameters.get("ws"),
-            "precipitation_mm": parameters.get("pmedian"),
-            "weather_symbol": parameters.get("Wsymb2"),
+            "valid_time": closest_entry.get("time"),
+            "temperature_c": self._clean(values.get("air_temperature")),
+            "wind_speed_ms": self._clean(values.get("wind_speed")),
+            "precipitation_mm": self._clean(
+                values.get("precipitation_amount_median")
+            ),
+            "weather_symbol": self._clean(values.get("symbol_code")),
         }
+
+    def _clean(self, value):
+
+        #
+        # SMHI använder 9999 som sentinelvärde för
+        # "inget värde", inte en riktig mätning.
+        #
+
+        if value == self.MISSING_VALUE:
+            return None
+
+        return value
