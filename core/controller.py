@@ -3,6 +3,7 @@ from core.menu import MainMenu
 from services.analysis_data_collector import AnalysisDataCollector
 from services.score_engine import ScoreEngine
 from services.system_generator import SystemGenerator
+from services.prediction_logger import PredictionLogger
 
 from analysis.analysis_engine import AnalysisEngine
 from analysis.register_modules import register_modules
@@ -25,6 +26,8 @@ class Controller:
         self.score_engine = ScoreEngine()
 
         self.system_generator = SystemGenerator()
+
+        self.prediction_logger = PredictionLogger()
 
         register_modules(self.analysis_engine)
 
@@ -77,12 +80,19 @@ class Controller:
 
         self._print_weather(analysis_data.weather)
 
-        self.system_generator.generate(
+        leg_selections, total_cost = self.system_generator.generate(
             races=analysis_data.races,
             max_cost=selection["max_cost"],
             risk=selection["risk"],
             spikes=selection["spikes"],
             locks=selection["locks"],
+        )
+
+        self.prediction_logger.save(
+            game=analysis_data.game,
+            leg_selections=leg_selections,
+            total_cost=total_cost,
+            selection=selection,
         )
 
     @staticmethod

@@ -1,7 +1,4 @@
-__pycache__/
-*.pyc
-.venv/
-logs/*.log# Python
+# Python
 __pycache__/
 *.py[cod]
 *.pyo
@@ -11,6 +8,10 @@ __pycache__/
 
 # Logs
 logs/*.log
+
+# Sparade systemförslag (genereras lokalt av PredictionLogger,
+# behöver inte ligga i repot)
+data/races/*.json
 
 # OS
 .DS_Store
