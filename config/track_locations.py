@@ -39,4 +39,14 @@ TRACK_LOCATIONS = {
     "Boden": (65.8252, 21.6887),
     "Arvika": (59.6550, 12.5892),
     "Tingsryd": (56.5289, 14.9797),
+    "Rättvik": (60.8958, 15.1128),
+    "Lycksele": (64.6011, 18.6802),
+    "Solänget": (63.2891, 18.7159),
+    "Bro Park": (59.5167, 17.6333),
 }
+
+#
+# OBS: koordinaterna ovan för Rättvik, Lycksele, Solänget och
+# Bro Park är preliminära uppskattningar och bör kontrolleras
+# mot en karta innan de litas på skarpt.
+#
