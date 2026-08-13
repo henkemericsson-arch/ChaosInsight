@@ -93,6 +93,7 @@ class Controller:
             leg_selections=leg_selections,
             total_cost=total_cost,
             selection=selection,
+            weather=analysis_data.weather,
         )
 
     @staticmethod

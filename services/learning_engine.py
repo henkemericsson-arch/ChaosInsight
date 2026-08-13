@@ -1,5 +1,6 @@
 import json
 import os
+from datetime import datetime, timezone
 
 from services.atg_client import ATGClient
 from parsers.result_parser import ResultParser
@@ -10,17 +11,22 @@ class LearningEngine:
     #
     # Jämför ett tidigare sparat systemförslag
     # (från PredictionLogger) mot det faktiska
-    # lopputfallet, och rapporterar hur väl systemet
-    # träffade rätt. Det här är den andra halvan av
-    # lärande-loopen som beskrivs i Chaos Insight Bibeln.
+    # lopputfallet, rapporterar traffsakerhet, och skriver
+    # en detaljerad observationspost per häst till en
+    # växande historikfil (data/history/observations.jsonl).
     #
-    # Ännu ingen automatisk viktjustering - bara
-    # observation och rapportering. Att låta systemet
-    # faktiskt lära sig av det här (justera KAMT-vikter
-    # över tid) är ett senare steg.
+    # Historikfilen är raw-material för framtida
+    # mönsteranalys - t.ex. om en viss kusk eller häst
+    # tenderar att over- eller undervarderas av crowden.
+    # Sjalva mönsteranalysen byggs som ett separat, senare
+    # steg, nar det finns tillräckligt med data att räkna på.
+    #
+    # Ingen automatisk viktjustering an - bara observation
+    # och rapportering.
     #
 
     PREDICTIONS_DIR = "data/races"
+    HISTORY_PATH = "data/history/observations.jsonl"
 
     def __init__(self):
 
@@ -32,7 +38,7 @@ class LearningEngine:
         path = os.path.join(self.PREDICTIONS_DIR, f"{game_id}.json")
 
         if not os.path.exists(path):
-            print(f"Ingen sparad prognos hittades för {game_id}.")
+            print(f"Ingen sparad prognos hittades for {game_id}.")
             return None
 
         with open(path, encoding="utf-8") as f:
@@ -42,9 +48,15 @@ class LearningEngine:
 
         for leg in prediction["legs"]:
 
-            leg_report = self._evaluate_leg(leg)
+            results = self._fetch_results(leg)
+
+            leg_report = self._build_leg_report(leg, results)
 
             leg_reports.append(leg_report)
+
+            if results is not None:
+
+                self._log_observations(prediction, leg, results)
 
         undecided = [r for r in leg_reports if r["status"] == "ej avgjort"]
 
@@ -68,27 +80,22 @@ class LearningEngine:
 
         return outcome
 
-    def _evaluate_leg(self, leg):
+    def _fetch_results(self, leg):
 
         race_id = leg.get("race_id")
 
         if race_id is None:
-            return {
-                "race_number": leg["race_number"],
-                "status": "ej avgjort",
-                "hit": False,
-            }
+            return None
 
         raw_data = self.client.get_race_result(race_id)
 
         if raw_data is None:
-            return {
-                "race_number": leg["race_number"],
-                "status": "ej avgjort",
-                "hit": False,
-            }
+            return None
 
-        results = self.result_parser.parse(raw_data)
+        return self.result_parser.parse(raw_data)
+
+    @staticmethod
+    def _build_leg_report(leg, results):
 
         if results is None:
             return {
@@ -101,7 +108,7 @@ class LearningEngine:
             (r for r in results if r["finish_order"] == 1), None
         )
 
-        chosen_numbers = {h["number"] for h in leg["horses"]}
+        chosen_numbers = set(leg.get("chosen_numbers", []))
 
         hit = winner is not None and winner["number"] in chosen_numbers
 
@@ -114,12 +121,70 @@ class LearningEngine:
             "hit": hit,
         }
 
+    def _log_observations(self, prediction, leg, results):
+
+        os.makedirs(os.path.dirname(self.HISTORY_PATH), exist_ok=True)
+
+        results_by_number = {r["number"]: r for r in results}
+
+        logged_at = datetime.now(timezone.utc).isoformat()
+
+        with open(self.HISTORY_PATH, "a", encoding="utf-8") as f:
+
+            for horse in leg["horses"]:
+
+                result = results_by_number.get(horse["number"], {})
+
+                observation = {
+                    "logged_at": logged_at,
+                    "game_id": prediction["game_id"],
+                    "race_id": leg.get("race_id"),
+                    "date": prediction["date"],
+                    "track": leg["track"],
+                    "distance": leg.get("distance"),
+                    "start_method": leg.get("start_method"),
+                    "kaosvarde": leg.get("kaosvarde"),
+                    "weather": prediction.get("weather"),
+
+                    "horse_number": horse["number"],
+                    "horse_name": horse["name"],
+                    "driver": horse.get("driver"),
+                    "trainer": horse.get("trainer"),
+                    "start_position": horse.get("start_position"),
+                    "odds": horse.get("odds"),
+                    "bet_percentage": horse.get("bet_percentage"),
+                    "shod_front": horse.get("shod_front"),
+                    "shod_back": horse.get("shod_back"),
+                    "shoe_changed": horse.get("shoe_changed"),
+                    "sulky_changed": horse.get("sulky_changed"),
+                    "driver_win_pct": horse.get("driver_win_pct"),
+                    "trainer_win_pct": horse.get("trainer_win_pct"),
+                    "horse_win_pct": horse.get("horse_win_pct"),
+
+                    "predicted_total_score": horse.get("total_score"),
+                    "predicted_crowd_index": horse.get("crowd_index"),
+                    "predicted_chaos_index": horse.get("chaos_index"),
+                    "chosen_by_system": horse.get("chosen"),
+
+                    "actual_finish_order": result.get("finish_order"),
+                    "actual_place": result.get("place"),
+                    "actual_final_odds": result.get("final_odds"),
+                }
+
+                f.write(json.dumps(observation, ensure_ascii=False))
+                f.write("\n")
+
+        print(
+            f"[Learning Engine] Loggade {len(leg['horses'])} observationer "
+            f"for V{leg['race_number']} till {self.HISTORY_PATH}"
+        )
+
     @staticmethod
     def _print_report(prediction, outcome):
 
         print()
         print("=" * 60)
-        print("Learning Engine - utvärdering")
+        print("Learning Engine - utvardering")
         print("=" * 60)
 
         spel = prediction["spel"]
@@ -134,10 +199,10 @@ class LearningEngine:
             race_number = leg["race_number"]
 
             if leg["status"] == "ej avgjort":
-                print(f"V{race_number}: ej avgjort än")
+                print(f"V{race_number}: ej avgjort an")
                 continue
 
-            marker = "TRÄFF" if leg["hit"] else "miss "
+            marker = "TRAFF" if leg["hit"] else "miss "
 
             winner_number = leg["winner_number"]
             winner_name = leg["winner_name"]
@@ -146,7 +211,7 @@ class LearningEngine:
             print(
                 f"V{race_number}: {marker}  "
                 f"vinnare: {winner_number}. {winner_name}  "
-                f"| dina hästar: {chosen_numbers}"
+                f"| dina hastar: {chosen_numbers}"
             )
 
         print()
@@ -160,9 +225,9 @@ class LearningEngine:
             hit_rate = round(100 * hits / evaluated_legs, 1)
 
             print(
-                f"Träffsäkerhet: {hits}/{evaluated_legs} "
+                f"Traffsakerhet: {hits}/{evaluated_legs} "
                 f"avgjorda lopp ({hit_rate} %)"
             )
 
         if undecided_legs > 0:
-            print(f"{undecided_legs} lopp är ännu inte avgjorda.")
+            print(f"{undecided_legs} lopp ar annu inte avgjorda.")
