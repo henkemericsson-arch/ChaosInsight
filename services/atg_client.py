@@ -35,3 +35,21 @@ class ATGClient:
         )
 
         return data
+
+    def get_race_result(self, race_id):
+
+        #
+        # Hämtar utökad loppdata inklusive resultat
+        # (finishOrder, place m.m.) för ett avgjort lopp.
+        # Samma bas-URL som kalendern (horse-betting-info),
+        # inte racinginfo.
+        #
+
+        url = f"{CALENDAR_BASE_URL}/races/{race_id}/extended"
+
+        data = self.http.get(
+            url=url,
+            headers=HEADERS,
+        )
+
+        return data

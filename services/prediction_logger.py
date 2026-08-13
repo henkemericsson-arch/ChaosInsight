@@ -60,6 +60,7 @@ class PredictionLogger:
         race = leg["race"]
 
         return {
+            "race_id": race.race_id,
             "race_number": race.race_number,
             "track": race.track,
             "kaosvarde": getattr(race, "kaosvarde", None),

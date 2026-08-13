@@ -32,6 +32,7 @@ class RaceParser:
                 start_method=race_data.get("startMethod", ""),
                 horses=horses,
                 start_time=race_data.get("startTime"),
+                race_id=race_data.get("id"),
             )
 
             races.append(race)
