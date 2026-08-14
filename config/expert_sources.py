@@ -18,15 +18,11 @@
 EXPERT_SOURCES = {
 
     #
-    # OBS: game_id nedan ar en gissning baserad pa monstret
-    # fran tidigare spel (V85_ÅÅÅÅ-MM-DD_bana-id_speldag-id).
-    # Kor "python main.py start" for Åby V85 2026-08-15 forst
-    # och kontrollera det verkliga game_id som visas i
-    # Sammanfattningen (samma som filnamnet i data/races/),
-    # rata raden nedan om den inte stammer.
+    # Bekraftat game_id for Åby V85 2026-08-15 (fran
+    # "ls data/races/" i Termux).
     #
 
-    "V85_2026-08-15_5_2": {
+    "V85_2026-08-15_6_5": {
         "travcash_slug": "v85-tips-lordag-aby-15-8",
         "rekatochklart_url": (
             "https://www.rekatochklart.com/trav/v85-tips/"

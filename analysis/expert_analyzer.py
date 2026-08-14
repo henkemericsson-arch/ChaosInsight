@@ -34,6 +34,11 @@ class ExpertAnalyzer:
         sources = EXPERT_SOURCES.get(game_id)
 
         if not sources:
+            print(
+                f"[Expertanalys] Inga kallor konfigurerade for "
+                f"game_id '{game_id}' i config/expert_sources.py "
+                f"- experttips hoppas over."
+            )
             return {}
 
         tips_by_race = {}
@@ -66,6 +71,13 @@ class ExpertAnalyzer:
                     f"[Expertanalys] Kunde inte hamta "
                     f"Rekatochklart: {e!r}"
                 )
+
+        if tips_by_race:
+            print(
+                f"[Expertanalys] Hamtade experttips for "
+                f"{len(tips_by_race)} lopp fran "
+                f"{len(sources)} kalla/kallor."
+            )
 
         return tips_by_race
 
