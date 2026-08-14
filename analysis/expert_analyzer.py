@@ -90,9 +90,19 @@ class ExpertAnalyzer:
 
             target.setdefault(race_number, {})[source_name] = numbers
 
-    def apply(self, race, tips_by_race):
+    def apply(self, race, leg_index, tips_by_race):
 
-        leg_tips = tips_by_race.get(race.race_number)
+        #
+        # OBS: race.race_number ar ATG:s absoluta loppnummer
+        # for dagen pa banan (t.ex. lopp 3-10), INTE vilket
+        # delopp (1-8) det ar inom sjalva V85-omgangen. Tips-
+        # kallorna numrerar sina lopp efter position inom
+        # omgangen ("V85-1".."V85-8"), sa vi maste matcha mot
+        # leg_index (racets position i analysis_data.races)
+        # istallet for race.race_number.
+        #
+
+        leg_tips = tips_by_race.get(leg_index)
 
         if not leg_tips:
 
