@@ -31,7 +31,8 @@ class SystemGenerator:
             races, key=lambda r: getattr(r, "kaosvarde", 0)
         )
 
-        base_coverage = self.RISK_COVERAGE.get(risk, 3)
+        base_coverage = self.RISK_COVERAGE.get(risk
+, 3)
 
         leg_selections = []
 
@@ -150,7 +151,15 @@ class SystemGenerator:
         print("Systemförslag")
         print("=" * 60)
 
-        for leg in leg_selections:
+        #
+        # Sorteras efter loppnummer bara for utskriften -
+        # sjalva tilldelningen av spikar/las ovan bygger
+        # fortfarande pa kaosvarde, inte loppordning.
+        #
+
+        for leg in sorted(
+            leg_selections, key=lambda leg: leg["race"].race_number
+        ):
 
             race = leg["race"]
             horse_names = ", ".join(
