@@ -1,3 +1,6 @@
+from config.bet_prices import ROW_PRICES, DEFAULT_ROW_PRICE
+
+
 class SystemGenerator:
 
     #
@@ -6,13 +9,10 @@ class SystemGenerator:
     # risknivå, antal spikar, antal lås och maximal
     # systemkostnad.
     #
-    # OBS: Kostnad per rad är satt till 1 kr som ett
-    # antagande (standard för de flesta ATG-flerloppsspel),
-    # men detta bör verifieras mot riktig speldata innan
-    # systemet används skarpt.
+    # Radpriset hämtas från config/bet_prices.py, baserat på
+    # spelets typ (V85, V86, V5 osv), och motsvarar ATG:s
+    # officiella priser.
     #
-
-    ROW_COST = 1
 
     RISK_COVERAGE = {
         "Låg": 2,
@@ -20,7 +20,9 @@ class SystemGenerator:
         "Hög": 5,
     }
 
-    def generate(self, races, max_cost, risk, spikes, locks):
+    def generate(self, races, max_cost, risk, spikes, locks, game_type=None):
+
+        row_price = ROW_PRICES.get(game_type, DEFAULT_ROW_PRICE)
 
         #
         # Sortera loppen efter Kaosvärde, stabilast först.
@@ -31,8 +33,7 @@ class SystemGenerator:
             races, key=lambda r: getattr(r, "kaosvarde", 0)
         )
 
-        base_coverage = self.RISK_COVERAGE.get(risk
-, 3)
+        base_coverage = self.RISK_COVERAGE.get(risk, 3)
 
         leg_selections = []
 
@@ -82,7 +83,7 @@ class SystemGenerator:
                 "horses": chosen,
             })
 
-        total_cost = self._calculate_cost(leg_selections)
+        total_cost = self._calculate_cost(leg_selections, row_price)
 
         #
         # Om kostnaden överstiger budgeten, dra ner
@@ -93,20 +94,21 @@ class SystemGenerator:
 
             self._reduce_widest_leg(leg_selections, spikes, locks)
 
-            total_cost = self._calculate_cost(leg_selections)
+            total_cost = self._calculate_cost(leg_selections, row_price)
 
-        self._print_system(leg_selections, total_cost, max_cost)
+        self._print_system(leg_selections, total_cost, max_cost, row_price)
 
         return leg_selections, total_cost
 
-    def _calculate_cost(self, leg_selections):
+    @staticmethod
+    def _calculate_cost(leg_selections, row_price):
 
         rows = 1
 
         for leg in leg_selections:
             rows *= max(len(leg["horses"]), 1)
 
-        return rows * self.ROW_COST
+        return round(rows * row_price, 2)
 
     @staticmethod
     def _can_reduce(leg_selections, spikes, locks):
@@ -144,12 +146,13 @@ class SystemGenerator:
 
         widest_leg["horses"].pop()
 
-    def _print_system(self, leg_selections, total_cost, max_cost):
+    def _print_system(self, leg_selections, total_cost, max_cost, row_price):
 
         print()
         print("=" * 60)
         print("Systemförslag")
         print("=" * 60)
+        print(f"Radpris: {row_price} kr")
 
         #
         # Sorteras efter loppnummer bara for utskriften -

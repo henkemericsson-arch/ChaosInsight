@@ -9,7 +9,6 @@ from analysis.analysis_engine import AnalysisEngine
 from analysis.register_modules import register_modules
 from analysis.crowd_engine import CrowdEngine
 from analysis.chaos_engine import ChaosEngine
-from analysis.expert_analyzer import ExpertAnalyzer
 
 
 class Controller:
@@ -22,7 +21,6 @@ class Controller:
 
         self.analysis_engine = AnalysisEngine()
 
-        self.expert_analyzer = ExpertAnalyzer()
         self.crowd_engine = CrowdEngine()
         self.chaos_engine = ChaosEngine()
         self.score_engine = ScoreEngine()
@@ -55,19 +53,13 @@ class Controller:
         )
 
         #
-        # Hämta experttips en gång för hela spelet (inte en
-        # gång per delopp), och kör Crowd-, Kaos- och
-        # Score-analys på ALLA lopp i systemet, eftersom
-        # System Generator behöver rankning för varje delopp.
+        # Kör Crowd-, Kaos- och Score-analys på ALLA lopp
+        # i systemet, eftersom System Generator behöver
+        # rankning för varje delopp.
         #
 
-        expert_tips = self.expert_analyzer.collect_tips(
-            analysis_data.game.id
-        )
+        for race in analysis_data.races:
 
-        for leg_index, race in enumerate(analysis_data.races, start=1):
-
-            self.expert_analyzer.apply(race, leg_index, expert_tips)
             self.crowd_engine.analyze(race)
             self.chaos_engine.analyze(race)
             self.score_engine.calculate(race)
@@ -94,6 +86,7 @@ class Controller:
             risk=selection["risk"],
             spikes=selection["spikes"],
             locks=selection["locks"],
+            game_type=analysis_data.game.name,
         )
 
         self.prediction_logger.save(
