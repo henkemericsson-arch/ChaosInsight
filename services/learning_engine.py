@@ -7,7 +7,6 @@ from parsers.result_parser import ResultParser
 
 
 class LearningEngine:
-
     #
     # Jämför ett tidigare sparat systemförslag
     # (från PredictionLogger) mot det faktiska
@@ -29,12 +28,10 @@ class LearningEngine:
     HISTORY_PATH = "data/history/observations.jsonl"
 
     def __init__(self):
-
         self.client = ATGClient()
         self.result_parser = ResultParser()
 
     def evaluate(self, game_id):
-
         path = os.path.join(self.PREDICTIONS_DIR, f"{game_id}.json")
 
         if not os.path.exists(path):
@@ -47,21 +44,21 @@ class LearningEngine:
         leg_reports = []
 
         for leg in prediction["legs"]:
-
             results = self._fetch_results(leg)
-
             leg_report = self._build_leg_report(leg, results)
 
             leg_reports.append(leg_report)
 
-            if results is not None:
-
+            #
+            # Logga bara observationer för lopp som faktiskt
+            # har en bekräftad vinnare - annars riskerar vi att
+            # spara ofullständiga/felaktiga observationsrader.
+            #
+            if leg_report["status"] != "ej avgjort":
                 self._log_observations(prediction, leg, results)
 
         undecided = [r for r in leg_reports if r["status"] == "ej avgjort"]
-
         decided = [r for r in leg_reports if r["status"] != "ej avgjort"]
-
         hits = [r for r in decided if r["hit"]]
 
         outcome = {
@@ -77,13 +74,10 @@ class LearningEngine:
             json.dump(prediction, f, ensure_ascii=False, indent=2)
 
         self._print_report(prediction, outcome)
-
         return outcome
 
     def _fetch_results(self, leg):
-
         race_id = leg.get("race_id")
-
         if race_id is None:
             return None
 
@@ -96,7 +90,6 @@ class LearningEngine:
 
     @staticmethod
     def _build_leg_report(leg, results):
-
         if results is None:
             return {
                 "race_number": leg["race_number"],
@@ -108,21 +101,34 @@ class LearningEngine:
             (r for r in results if r["finish_order"] == 1), None
         )
 
+        if winner is None:
+            #
+            # ATG kan sätta loppets status till "results" innan
+            # alla placeringar (t.ex. efter fotofinish) är
+            # fastställda. Utan en bekräftad vinnare är loppet i
+            # praktiken fortfarande oavgjort - räkna det inte
+            # som en miss.
+            #
+            return {
+                "race_number": leg["race_number"],
+                "status": "ej avgjort",
+                "hit": False,
+            }
+
         chosen_numbers = set(leg.get("chosen_numbers", []))
 
-        hit = winner is not None and winner["number"] in chosen_numbers
+        hit = winner["number"] in chosen_numbers
 
         return {
             "race_number": leg["race_number"],
             "status": "avgjort",
-            "winner_number": winner["number"] if winner else None,
-            "winner_name": winner["name"] if winner else None,
+            "winner_number": winner["number"],
+            "winner_name": winner["name"],
             "chosen_numbers": sorted(chosen_numbers),
             "hit": hit,
         }
 
     def _log_observations(self, prediction, leg, results):
-
         os.makedirs(os.path.dirname(self.HISTORY_PATH), exist_ok=True)
 
         results_by_number = {r["number"]: r for r in results}
@@ -130,9 +136,7 @@ class LearningEngine:
         logged_at = datetime.now(timezone.utc).isoformat()
 
         with open(self.HISTORY_PATH, "a", encoding="utf-8") as f:
-
             for horse in leg["horses"]:
-
                 result = results_by_number.get(horse["number"], {})
 
                 observation = {
@@ -182,7 +186,6 @@ class LearningEngine:
 
     @staticmethod
     def _print_report(prediction, outcome):
-
         print()
         print("=" * 60)
         print("Learning Engine - utvardering")
@@ -196,7 +199,6 @@ class LearningEngine:
         print()
 
         for leg in outcome["legs"]:
-
             race_number = leg["race_number"]
 
             if leg["status"] == "ej avgjort":
@@ -204,7 +206,6 @@ class LearningEngine:
                 continue
 
             marker = "TRAFF" if leg["hit"] else "miss "
-
             winner_number = leg["winner_number"]
             winner_name = leg["winner_name"]
             chosen_numbers = leg["chosen_numbers"]
@@ -222,9 +223,7 @@ class LearningEngine:
         undecided_legs = outcome["undecided_legs"]
 
         if evaluated_legs > 0:
-
             hit_rate = round(100 * hits / evaluated_legs, 1)
-
             print(
                 f"Traffsakerhet: {hits}/{evaluated_legs} "
                 f"avgjorda lopp ({hit_rate} %)"
@@ -232,3 +231,4 @@ class LearningEngine:
 
         if undecided_legs > 0:
             print(f"{undecided_legs} lopp ar annu inte avgjorda.")
+

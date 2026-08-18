@@ -1,0 +1,138 @@
+{
+  "vinnare": {
+    "@type": ".VinnarePool",
+    "id": "vinnare_2026-08-17_15_9",
+    "status": "results",
+    "timestamp": "2026-08-17 21:49:00",
+    "turnover": 43780200,
+    "result": {
+      "@type": ".VinnarePoolRaceResult",
+      "winners": [
+        {
+          "number": 4,
+          "odds": 605
+        }
+      ]
+    },
+    "betType": "vinnare"
+  },
+  "plats": {
+    "@type": ".PlatsPool",
+    "id": "plats_2026-08-17_15_9",
+    "status": "results",
+    "timestamp": "2026-08-17 21:49:00",
+    "turnover": 43780200,
+    "result": {
+      "@type": ".PlatsPoolRaceResult",
+      "winners": {
+        "first": [
+          {
+            "number": 4,
+            "odds": 226
+          }
+        ],
+        "second": [
+          {
+            "number": 10,
+            "odds": 300
+          }
+        ],
+        "third": [
+          {
+            "number": 11,
+            "odds": 158
+          }
+        ]
+      }
+    },
+    "betType": "plats"
+  },
+  "tvilling": {
+    "@type": ".TvillingPool",
+    "id": "tvilling_2026-08-17_15_9",
+    "status": "results",
+    "timestamp": "2026-08-17 21:49:00",
+    "turnover": 43780200,
+    "result": {
+      "@type": ".TvillingPoolRaceResult",
+      "winners": [
+        {
+          "combination": [
+            4,
+            10
+          ],
+          "odds": 3414
+        }
+      ]
+    },
+    "betType": "tvilling"
+  },
+  "komb": {
+    "@type": ".KombPool",
+    "id": "komb_2026-08-17_15_9",
+    "status": "results",
+    "timestamp": "2026-08-17 21:49:00",
+    "turnover": 43780200,
+    "result": {
+      "@type": ".KombPoolRaceResult",
+      "winners": [
+        {
+          "combination": [
+            4,
+            10
+          ],
+          "odds": 5402
+        }
+      ]
+    },
+    "betType": "komb"
+  },
+  "trio": {
+    "@type": ".TrioPool",
+    "id": "trio_2026-08-17_15_9",
+    "status": "results",
+    "timestamp": "2026-08-17 21:49:00",
+    "turnover": 43780200,
+    "result": {
+      "@type": ".TrioPoolRaceResult",
+      "winners": [
+        {
+          "combination": [
+            4,
+            10,
+            11
+          ],
+          "odds": 19292
+        }
+      ]
+    },
+    "betType": "trio"
+  },
+  "V64": {
+    "@type": ".Pool",
+    "result": {
+      "@type": ".MarkingBetRacePoolResult",
+      "systems": "688,7",
+      "value": {
+        "amount": 270600
+      },
+      "winners": [
+        4
+      ],
+      "reserveOrder": [
+        11,
+        3,
+        6,
+        4,
+        1,
+        10,
+        9,
+        8,
+        2,
+        5,
+        7,
+        12
+      ]
+    }
+  }
+}
