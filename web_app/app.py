@@ -25,77 +25,30 @@ race_collector = RaceCollector()
 
 PREDICTIONS_DIR = "data/races"
 
-PAGE_HEAD = """<!DOCTYPE html>
-<html lang="sv">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-<title>Chaos Insight</title>
+BASE_STYLE = """
 <style>
-  * { box-sizing: border-box; }
-  html, body {
-    margin: 0; padding: 0; width: 100%;
-    background:#0d1117; color:#e6edf3;
-    font-family: -apple-system, Roboto, Helvetica, Arial, sans-serif;
-  }
-  body {
-    max-width: 520px; margin: 0 auto;
-    padding: 16px 16px calc(env(safe-area-inset-bottom, 0px) + 24px);
-  }
-  h1 { color:#58a6ff; font-size: 1.5rem; margin: 8px 0 16px; }
-  h2 { color:#58a6ff; font-size: 1.15rem; margin: 24px 0 10px; }
-  p { line-height: 1.4; }
+  body { font-family: sans-serif; max-width: 480px; margin: 0 auto; padding: 16px;
+         background:#0d1117; color:#e6edf3; }
+  h1, h2 { color:#58a6ff; }
   a { color:#58a6ff; text-decoration:none; }
-  form { display:flex; flex-direction:column; gap:12px; }
-  label { font-size: 0.9rem; color:#8b949e; }
-  input, select, button {
-    width: 100%;
-    padding: 14px; font-size: 16px; border-radius: 8px;
-    border:1px solid #30363d; background:#161b22; color:#e6edf3;
-  }
-  select { -webkit-appearance: none; appearance: none; }
-  button {
-    background:#238636; color:white; border:none;
-    font-weight:bold; cursor:pointer;
-    min-height: 48px;
-  }
-  button:active { background:#2ea043; }
+  form { display:flex; flex-direction:column; gap:10px; }
+  input, select, button { padding:12px; font-size:16px; border-radius:6px;
+    border:1px solid #30363d; background:#161b22; color:#e6edf3; }
+  button { background:#238636; color:white; border:none; cursor:pointer; font-weight:bold; }
   button:disabled { background:#30363d; color:#6e7681; cursor:not-allowed; }
-  .card {
-    background:#161b22; border:1px solid #30363d; border-radius:10px;
-    padding:14px; margin-bottom:12px; display:block;
-  }
-  .card:active { border-color:#58a6ff; }
+  .card { background:#161b22; border:1px solid #30363d; border-radius:8px;
+          padding:12px; margin-bottom:10px; display:block; }
+  .card:hover { border-color:#58a6ff; }
   .leg { margin-bottom:14px; }
-  .kaos { color:#f0883e; font-size:14px; margin: 4px 0; }
-  .footer-link {
-    display:block; margin-top:24px; padding: 12px 0;
-    text-align:center; font-weight:bold;
-  }
+  .kaos { color:#f0883e; font-size:14px; }
+  .footer-link { display:block; margin-top:20px; }
   .btn-row { display:flex; gap:10px; }
   .btn-row button { flex:1; }
-  .hit { color:#3fb950; margin-top: 6px; }
-  .miss { color:#f85149; margin-top: 6px; }
-  .undecided { color:#8b949e; margin-top: 6px; }
+  .hit { color:#3fb950; }
+  .miss { color:#f85149; }
+  .undecided { color:#8b949e; }
 </style>
-</head>
-<body>
 """
-
-PAGE_FOOT = """
-</body>
-</html>
-"""
-
-
-def render_page(body_template, **context):
-    return render_template_string(PAGE_HEAD + body_template + PAGE_FOOT, **context)
-
-
-def _is_fully_evaluated(outcome):
-    if outcome is None:
-        return False
-    return outcome.get("undecided_legs", 0) == 0
 
 
 def list_predictions():
@@ -119,7 +72,7 @@ def list_predictions():
             "track": data.get("track", "?"),
             "date": data.get("date", "?"),
             "saved_at": data.get("saved_at", ""),
-            "evaluated": _is_fully_evaluated(data.get("outcome")),
+            "evaluated": data.get("outcome") is not None,
         })
 
     items.sort(key=lambda item: item["saved_at"], reverse=True)
@@ -143,7 +96,7 @@ def index():
 
     predictions = list_predictions()
 
-    return render_page("""
+    return render_template_string(BASE_STYLE + """
         <h1>Chaos Insight</h1>
         <form method="post">
             <label>Datum</label>
@@ -156,7 +109,7 @@ def index():
         <p>Inga sparade spel an.</p>
         {% else %}
         <form id="pred-form">
-            <select id="pred-select" name="game_id">
+            <select id="pred-select" name="game_id" onchange="updateEvalBtn()">
                 {% for p in predictions %}
                 <option value="{{ p.game_id }}" data-evaluated="{{ '1' if p.evaluated else '0' }}"
                     style="color: {{ '#e6edf3' if p.evaluated else '#3fb950' }};">
@@ -182,6 +135,13 @@ def index():
                 form.method = 'post';
                 form.submit();
             }
+            function updateEvalBtn() {
+                var select = document.getElementById('pred-select');
+                var opt = select.options[select.selectedIndex];
+                var btn = document.getElementById('eval-btn');
+                btn.disabled = (opt.getAttribute('data-evaluated') === '1');
+            }
+            updateEvalBtn();
         </script>
         {% endif %}
     """, predictions=predictions)
@@ -193,15 +153,15 @@ def banor():
     calendar = race_collector.get_calendar(date)
 
     if not calendar.days or not calendar.days[0].track_days:
-        return render_page(
-            "<p>Inga banor hittades for {{ date }}.</p>"
+        return render_template_string(
+            BASE_STYLE + "<p>Inga banor hittades for {{ date }}.</p>"
             "<a class='footer-link' href='/'>Hem</a>",
             date=date,
         )
 
     track_days = calendar.days[0].track_days
 
-    return render_page("""
+    return render_template_string(BASE_STYLE + """
         <h1>Banor - {{ date }}</h1>
         {% for t in track_days %}
         <a class="card" href="{{ url_for('spel', date=date, bana=t.name) }}">{{ t.name }}</a>
@@ -226,7 +186,7 @@ def spel():
         g for g in track_day.games if g.name.upper() in SYSTEM_BET_TYPES
     ]
 
-    return render_page("""
+    return render_template_string(BASE_STYLE + """
         <h1>Spel - {{ bana }}</h1>
         {% if not games %}
         <p>Inga flerloppsspel hittades.</p>
@@ -245,7 +205,7 @@ def installningar():
     game_id = request.args.get("game_id")
     game_name = request.args.get("game_name")
 
-    return render_page("""
+    return render_template_string(BASE_STYLE + """
         <h1>Installningar</h1>
         <p>{{ game_name }} - {{ bana }}</p>
         <form method="post" action="{{ url_for('resultat') }}">
@@ -336,7 +296,7 @@ def resultat():
         leg_selections, key=lambda leg: leg["race"].race_number
     )
 
-    return render_page("""
+    return render_template_string(BASE_STYLE + """
         <h1>Systemförslag</h1>
         <p>{{ game_name }} - {{ bana }} - {{ date }}</p>
         <p>Total kostnad: <b>{{ total_cost }} kr</b> (budget {{ max_cost }} kr)</p>
@@ -368,7 +328,7 @@ def visa_spel(game_id):
         for r in outcome["legs"]:
             leg_reports[r["race_number"]] = r
 
-    return render_page("""
+    return render_template_string(BASE_STYLE + """
         <h1>{{ prediction.spel }}</h1>
         <p>{{ prediction.track }} - {{ prediction.date }}</p>
         <p>Total kostnad: <b>{{ prediction.total_cost }} kr</b> (budget {{ prediction.max_cost }} kr)</p>
@@ -378,10 +338,11 @@ def visa_spel(game_id):
             Traffsakerhet: {{ outcome.hits }}/{{ outcome.evaluated_legs }} avgjorda lopp
             {% if outcome.undecided_legs %}({{ outcome.undecided_legs }} ej avgjorda){% endif %}
         </p>
-        {% endif %}
+        {% else %}
         <form method="post" action="{{ url_for('utvardera', game_id=prediction.game_id) }}">
-            <button type="submit">{{ 'Utvardera igen' if fully_evaluated else 'Utvardera' }}</button>
+            <button type="submit">Utvardera</button>
         </form>
+        {% endif %}
 
         {% for leg in legs %}
         <div class="card leg">
@@ -403,8 +364,7 @@ def visa_spel(game_id):
         {% endfor %}
 
         <a class="footer-link" href="/">Hem</a>
-    """, prediction=prediction, legs=legs, outcome=outcome, leg_reports=leg_reports,
-        fully_evaluated=_is_fully_evaluated(outcome))
+    """, prediction=prediction, legs=legs, outcome=outcome, leg_reports=leg_reports)
 
 
 @app.route("/utvardera/<game_id>", methods=["POST"])

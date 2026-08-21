@@ -23,6 +23,17 @@ class LearningEngine:
     # Ingen automatisk viktjustering an - bara observation
     # och rapportering.
     #
+    # Nar samtliga lopp i spelet ar avgjorda beräknas aven
+    # den mojliga utdelningen. ATG:s spel (V64/V65/V75/V85/V86)
+    # betalar ut pa flera nivaer (t.ex. 4, 5 och 6 ratt for V64),
+    # med utdelning per niva i game_data["pools"][spel]["result"]
+    # ["payouts"][niva] = {"systems": ..., "payout": ... (ore)}.
+    #
+    # Eftersom SystemGenerator bygger en fullstandig Cartesian-
+    # tackning (alla kombinationer av valda hastar) racknas det
+    # ut kombinatoriskt hur manga av vara egna rader som hamnar
+    # pa varje ratt-niva - se _row_distribution().
+    #
 
     PREDICTIONS_DIR = "data/races"
     HISTORY_PATH = "data/history/observations.jsonl"
@@ -69,6 +80,11 @@ class LearningEngine:
         }
 
         prediction["outcome"] = outcome
+
+        if len(undecided) == 0:
+            prediction["payout"] = self._calculate_payout(prediction, outcome)
+        else:
+            prediction["payout"] = None
 
         with open(path, "w", encoding="utf-8") as f:
             json.dump(prediction, f, ensure_ascii=False, indent=2)
@@ -128,6 +144,140 @@ class LearningEngine:
             "hit": hit,
         }
 
+    @staticmethod
+    def _row_distribution(leg_counts, leg_hits):
+        #
+        # Rackar ut, for en fullstandig Cartesian-tackning, hur
+        # manga rader som hamnar pa exakt J ratt, for varje J.
+        #
+        # For ett lopp vi missade helt (vinnaren fanns inte bland
+        # vara hastar) bidrar loppet alltid med 0 ratt, oavsett
+        # vilken av vara hastar raden rakar ha i det loppet - sa
+        # de loppen paverkar bara hur manga rader som "delar" pa
+        # varje utfall (en multiplikator), inte sjalva ratt-antalet.
+        #
+        # For ett lopp vi traffade i kan varje rad antingen ha
+        # vinnaren (1 mojlighet, +1 ratt) eller nagon av vara
+        # ovriga hastar (count-1 mojligheter, +0 ratt).
+        #
+        # poly[j] efter konvolution = antal rader med exakt j
+        # ratt bland de traffade loppen (vilket ar samma som det
+        # totala antalet ratt, eftersom missade lopp aldrig ger
+        # ratt).
+        #
+        miss_multiplier = 1
+        hit_leg_counts = []
+
+        for count, hit in zip(leg_counts, leg_hits):
+            if hit:
+                hit_leg_counts.append(count)
+            else:
+                miss_multiplier *= count
+
+        poly = [1]
+        for count in hit_leg_counts:
+            new_poly = [0] * (len(poly) + 1)
+            for j, ways in enumerate(poly):
+                #
+                # Valde vinnaren i detta lopp -> ett ratt mer.
+                #
+                new_poly[j + 1] += ways * 1
+                #
+                # Valde nagon av de ovriga hastarna -> inget
+                # extra ratt.
+                #
+                if count > 1:
+                    new_poly[j] += ways * (count - 1)
+            poly = new_poly
+
+        return [ways * miss_multiplier for ways in poly]
+
+    def _calculate_payout(self, prediction, outcome):
+        game_type = prediction.get("spel")
+        game_id = prediction.get("game_id")
+
+        if not game_type or not game_id:
+            return None
+
+        try:
+            game_data = self.client.get_game(game_id)
+        except Exception as exc:
+            print(f"[Learning Engine] Kunde inte hamta utdelning: {exc}")
+            return None
+
+        if not game_data:
+            return None
+
+        pool = (game_data.get("pools") or {}).get(game_type)
+        if not pool:
+            print(
+                f"[Learning Engine] Ingen poolinformation for {game_type} "
+                f"hittades - kan inte rakna ut utdelning."
+            )
+            return None
+
+        payouts_by_level = ((pool.get("result") or {}).get("payouts")) or {}
+
+        if not payouts_by_level:
+            print(
+                f"[Learning Engine] Ingen utdelningsdata hittades an "
+                f"for {game_type} - kan inte rakna ut utdelning."
+            )
+            return None
+
+        #
+        # Bygg upp leg_counts/leg_hits i samma ordning for bade
+        # antal valda hastar och traff/miss per lopp.
+        #
+        hits_by_race_number = {
+            leg_report["race_number"]: leg_report["hit"]
+            for leg_report in outcome["legs"]
+        }
+
+        leg_counts = []
+        leg_hits = []
+
+        for leg in prediction["legs"]:
+            race_number = leg["race_number"]
+            leg_counts.append(len(leg.get("chosen_numbers", [])) or 1)
+            leg_hits.append(hits_by_race_number.get(race_number, False))
+
+        distribution = self._row_distribution(leg_counts, leg_hits)
+
+        breakdown = []
+        total_payout = 0.0
+
+        for level_str, info in payouts_by_level.items():
+            try:
+                level = int(level_str)
+            except (TypeError, ValueError):
+                continue
+
+            rows = distribution[level] if level < len(distribution) else 0
+            if rows <= 0:
+                continue
+
+            per_row_kr = info.get("payout", 0) / 100
+            subtotal = rows * per_row_kr
+            total_payout += subtotal
+
+            breakdown.append({
+                "level": level,
+                "rows": rows,
+                "per_row": round(per_row_kr, 2),
+                "subtotal": round(subtotal, 2),
+            })
+
+        breakdown.sort(key=lambda b: b["level"], reverse=True)
+
+        total_cost = prediction.get("total_cost", 0)
+
+        return {
+            "breakdown": breakdown,
+            "total_payout": round(total_payout, 2),
+            "net": round(total_payout - total_cost, 2),
+        }
+
     def _log_observations(self, prediction, leg, results):
         os.makedirs(os.path.dirname(self.HISTORY_PATH), exist_ok=True)
 
@@ -142,6 +292,7 @@ class LearningEngine:
                 observation = {
                     "logged_at": logged_at,
                     "game_id": prediction["game_id"],
+                    "strategy": prediction.get("strategy"),
                     "race_id": leg.get("race_id"),
                     "date": prediction["date"],
                     "track": leg["track"],
@@ -232,3 +383,16 @@ class LearningEngine:
         if undecided_legs > 0:
             print(f"{undecided_legs} lopp ar annu inte avgjorda.")
 
+        payout = prediction.get("payout")
+        if payout is not None:
+            print()
+            if payout["breakdown"]:
+                for entry in payout["breakdown"]:
+                    print(
+                        f"{entry['level']} ratt: {entry['rows']} rad(er) x "
+                        f"{entry['per_row']} kr = {entry['subtotal']} kr"
+                    )
+                print(f"Total utdelning: {payout['total_payout']} kr")
+            else:
+                print("Ingen utdelning denna gang.")
+            print(f"Netto: {payout['net']} kr")

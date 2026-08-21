@@ -16,19 +16,31 @@ class PredictionLogger:
     # för avgjorda lopp som vi ännu inte har sett strukturen
     # på.
     #
+    # Varje generering far ett eget unikt filnamn (ATG-spelets
+    # id + tidsstämpel), sa att flera system for samma lopp
+    # kan sparas sida vid sida istallet for att skriva over
+    # varandra. Det riktiga ATG-id:t ("game_id") sparas kvar
+    # inuti filen och anvands for uppslag mot ATG:s API -
+    # filnamnet ("prediction_id") ar bara en unik nyckel for
+    # just den har sparade posten.
+    #
 
     OUTPUT_DIR = "data/races"
 
-    def save(self, game, leg_selections, total_cost, selection, weather=None):
-
+    def save(self, game, leg_selections, total_cost, selection, weather=None, strategy="continuous"):
         os.makedirs(self.OUTPUT_DIR, exist_ok=True)
 
+        timestamp = datetime.now(timezone.utc)
+        prediction_id = f"{game.id}__{strategy}__{timestamp.strftime('%Y%m%dT%H%M%S%f')}"
+
         record = {
+            "prediction_id": prediction_id,
             "game_id": game.id,
             "track": game.track,
             "date": game.date,
             "spel": game.name,
-            "saved_at": datetime.now(timezone.utc).isoformat(),
+            "strategy": strategy,
+            "saved_at": timestamp.isoformat(),
             "max_cost": selection["max_cost"],
             "risk": selection["risk"],
             "spikes": selection["spikes"],
@@ -44,22 +56,22 @@ class PredictionLogger:
             # Fylls i senare av Learning Engine när det
             # faktiska utfallet är känt.
             #
-
             "outcome": None,
+            "payout": None,
         }
 
-        path = os.path.join(self.OUTPUT_DIR, f"{game.id}.json")
+        path = os.path.join(self.OUTPUT_DIR, f"{prediction_id}.json")
 
         with open(path, "w", encoding="utf-8") as f:
             json.dump(record, f, ensure_ascii=False, indent=2)
 
         print(f"\n[Prediction Logger] Sparade förslaget till {path}")
 
+        return prediction_id
+
     @staticmethod
     def _leg_to_dict(leg):
-
         race = leg["race"]
-
         chosen_numbers = {horse.number for horse in leg["horses"]}
 
         return {
@@ -91,14 +103,12 @@ class PredictionLogger:
                     "chaos_index": horse.get_metric("chaos_index"),
                     "chosen": horse.number in chosen_numbers,
                 }
-
                 #
                 # Alla hästar i loppet sparas, inte bara de
                 # som valdes till systemet, så att mönster
                 # (t.ex. över-/undervärdering) kan läras även
                 # för hästar vi inte satsade på.
                 #
-
                 for horse in race.horses
             ],
         }
