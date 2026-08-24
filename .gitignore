@@ -16,3 +16,5 @@ data/races/*.json
 # OS
 .DS_Store
 Thumbs.db
+data/history/*.jsonl
+data/races/*.json
