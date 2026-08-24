@@ -1,22 +1,18 @@
 class RaceParser:
 
     def parse(self, game_data):
-
         #
         # Tar emot rådata för ett helt spel (t.ex. V86)
         # från ATG:s games-endpoint och bygger en lista
         # av Race-objekt, ett per delopp.
         #
-
         from models.race import Race
         from parsers.horse_parser import HorseParser
 
         horse_parser = HorseParser()
-
         races = []
 
         for race_data in game_data.get("races", []):
-
             track_data = race_data.get("track") or {}
 
             horses = [
@@ -33,8 +29,10 @@ class RaceParser:
                 horses=horses,
                 start_time=race_data.get("startTime"),
                 race_id=race_data.get("id"),
+                track_condition=track_data.get("condition"),
             )
 
             races.append(race)
 
         return races
+

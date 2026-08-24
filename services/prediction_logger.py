@@ -80,6 +80,7 @@ class PredictionLogger:
             "track": race.track,
             "distance": race.distance,
             "start_method": race.start_method,
+            "track_condition": getattr(race, "track_condition", None),
             "kaosvarde": getattr(race, "kaosvarde", None),
             "chosen_numbers": sorted(chosen_numbers),
             "horses": [
@@ -95,6 +96,8 @@ class PredictionLogger:
                     "shod_back": horse.shod_back,
                     "shoe_changed": horse.shoe_changed,
                     "sulky_changed": horse.sulky_changed,
+                    "cart_type": horse.cart_type,
+                    "career_earnings": horse.career_earnings,
                     "driver_win_pct": horse.driver_win_pct,
                     "trainer_win_pct": horse.trainer_win_pct,
                     "horse_win_pct": horse.horse_win_pct,

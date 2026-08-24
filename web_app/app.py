@@ -1,6 +1,7 @@
 import sys
 import os
 import json
+from datetime import datetime
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from flask import Flask, request, redirect, url_for, render_template_string
 
@@ -24,6 +25,26 @@ app = Flask(__name__)
 race_collector = RaceCollector()
 
 PREDICTIONS_DIR = "data/races"
+
+#
+# Enda historiska loppet som ar tillatet att generera nya system
+# pa, for laborering/testning av funktioner. Alla andra redan
+# avgjorda lopp blockeras fran nygenerering (se /installningar),
+# eftersom ATG:s odds/rankingdata for avgjorda lopp kan andras i
+# efterhand (livemedia, stallbacksrykten m.m.) och da gor
+# testresultat missvisande.
+#
+DEMO_GAME_ID = "V86_2026-08-12_32_3"
+
+
+def _is_historical_date(date_str):
+    if not date_str:
+        return False
+    try:
+        race_date = datetime.strptime(date_str, "%Y-%m-%d").date()
+    except ValueError:
+        return False
+    return race_date < datetime.now().date()
 
 PAGE_HEAD = """<!DOCTYPE html>
 <html lang="sv">
@@ -142,6 +163,58 @@ def load_prediction(game_id):
         return json.load(f)
 
 
+def find_predictions_by_game(game_id, exclude_prediction_id=None):
+    matches = []
+    if not os.path.isdir(PREDICTIONS_DIR):
+        return matches
+
+    for filename in os.listdir(PREDICTIONS_DIR):
+        if not filename.endswith(".json"):
+            continue
+
+        prediction_id = filename[:-5]
+        if prediction_id == exclude_prediction_id:
+            continue
+
+        path = os.path.join(PREDICTIONS_DIR, filename)
+        try:
+            with open(path, encoding="utf-8") as f:
+                data = json.load(f)
+        except (json.JSONDecodeError, OSError):
+            continue
+
+        if data.get("game_id") == game_id:
+            data["_prediction_id"] = prediction_id
+            matches.append(data)
+
+    return matches
+
+
+def find_strategy_sibling(prediction, prediction_id):
+    #
+    # Hittar det andra systemet (motsatt garderingsprincip) som
+    # genererades for samma ATG-spel, om ett sadant finns. Om
+    # flera finns (t.ex. flera jamforelser gjorda over tid) tas
+    # den senast sparade.
+    #
+    game_id = prediction.get("game_id")
+    strategy = prediction.get("strategy")
+
+    if not game_id or not strategy:
+        return None
+
+    candidates = [
+        p for p in find_predictions_by_game(game_id, exclude_prediction_id=prediction_id)
+        if p.get("strategy") and p.get("strategy") != strategy
+    ]
+
+    if not candidates:
+        return None
+
+    candidates.sort(key=lambda p: p.get("saved_at", ""), reverse=True)
+    return candidates[0]
+
+
 @app.route("/", methods=["GET", "POST"])
 def index():
 
@@ -190,6 +263,14 @@ def index():
                 form.method = 'post';
                 form.submit();
             }
+            function updateEvalBtn() {
+                var select = document.getElementById('pred-select');
+                var opt = select.options[select.selectedIndex];
+                var btn = document.getElementById('eval-btn');
+                btn.disabled = (opt.getAttribute('data-evaluated') === '1');
+            }
+            document.getElementById('pred-select').addEventListener('change', updateEvalBtn);
+            updateEvalBtn();
         </script>
         {% endif %}
 
@@ -255,6 +336,22 @@ def installningar():
     game_id = request.args.get("game_id")
     game_name = request.args.get("game_name")
 
+    if game_id != DEMO_GAME_ID and _is_historical_date(date):
+        return render_page("""
+            <h1>Redan avgjort lopp</h1>
+            <p>{{ game_name }} - {{ bana }} - {{ date }} har redan gatt.</p>
+            <p>
+                Nya system kan bara genereras for kommande eller pagaende lopp,
+                eftersom ATG:s odds- och rankingdata for avgjorda lopp kan andras
+                i efterhand - vilket gor testresultat missvisande.
+            </p>
+            <p>
+                For att laborera med funktioner, anvand demoloppet istallet:
+                <a href="/">ga till startsidan</a> och valj demoloppets datum.
+            </p>
+            <a class="footer-link" href="/">Hem</a>
+        """, game_name=game_name, bana=bana, date=date)
+
     return render_page("""
         <h1>Installningar</h1>
         <p>{{ game_name }} - {{ bana }}</p>
@@ -301,6 +398,13 @@ def resultat():
     spikes = int(request.form["spikes"])
     locks = int(request.form["locks"])
     compare_strategies = request.form.get("compare_strategies") == "1"
+
+    if game_id != DEMO_GAME_ID and _is_historical_date(date):
+        return render_page("""
+            <h1>Redan avgjort lopp</h1>
+            <p>Nya system kan inte genereras for redan avgjorda lopp.</p>
+            <a class="footer-link" href="/">Hem</a>
+        """)
 
     game = Game(
         game_id=game_id, name=game_name, track=bana, date=date, races=0
@@ -417,11 +521,30 @@ def visa_spel(prediction_id):
         for r in outcome["legs"]:
             leg_reports[r["race_number"]] = r
 
+    strategy_labels = {
+        "continuous": "Ny princip (kontinuerlig gardering)",
+        "legacy": "Gammal princip (fast gardering)",
+    }
+
+    sibling = find_strategy_sibling(prediction, prediction_id)
+    comparison = None
+    if sibling and prediction.get("payout") and sibling.get("payout"):
+        this_net = prediction["payout"]["net"]
+        sibling_net = sibling["payout"]["net"]
+        comparison = {
+            "this_label": strategy_labels.get(prediction.get("strategy"), prediction.get("strategy")),
+            "this_net": this_net,
+            "sibling_label": strategy_labels.get(sibling.get("strategy"), sibling.get("strategy")),
+            "sibling_net": sibling_net,
+            "sibling_id": sibling.get("_prediction_id"),
+            "diff": round(this_net - sibling_net, 2),
+        }
+
     return render_page("""
         <h1>{{ prediction.spel }}</h1>
         {% if prediction.strategy %}
         <p style="color:#8b949e; font-size:0.9rem;">
-            {{ 'Ny princip (kontinuerlig gardering)' if prediction.strategy == 'continuous' else 'Gammal princip (fast gardering)' if prediction.strategy == 'legacy' else prediction.strategy }}
+            {{ strategy_labels.get(prediction.strategy, prediction.strategy) }}
         </p>
         {% endif %}
         <p>{{ prediction.track }} - {{ prediction.date }}</p>
@@ -446,9 +569,58 @@ def visa_spel(prediction_id):
             <p>Netto (utdelning minus insats): <b>{{ payout.net }} kr</b></p>
         </div>
         {% endif %}
+
+        {% if comparison %}
+        <div class="card">
+            <b>Jämförelse mot {{ comparison.sibling_label }}</b>
+            <p>{{ comparison.this_label }}: <b>{{ comparison.this_net }} kr</b></p>
+            <p>{{ comparison.sibling_label }}: <b>{{ comparison.sibling_net }} kr</b></p>
+            <p>
+                Skillnad:
+                <b class="{{ 'hit' if comparison.diff >= 0 else 'miss' }}">
+                    {{ '+' if comparison.diff >= 0 else '' }}{{ comparison.diff }} kr
+                </b>
+                {{ 'till fordel for ' + comparison.this_label if comparison.diff > 0 else 'till fordel for ' + comparison.sibling_label if comparison.diff < 0 else '(lika)' }}
+            </p>
+            <a href="{{ url_for('visa_spel', prediction_id=comparison.sibling_id) }}">Visa {{ comparison.sibling_label }}</a>
+        </div>
+        {% elif sibling %}
+        <p style="color:#8b949e; font-size:0.85rem;">
+            Ett system med {{ strategy_labels.get(sibling.strategy, sibling.strategy) }} finns ocksa sparat for det har loppet,
+            men jamforelsen visas forst nar bada ar utvarderade.
+        </p>
+        {% endif %}
+
+        {% if history and history|length > 1 %}
+        <div class="card">
+            <b>Utvärderingshistorik ({{ history|length }} ggr)</b>
+            {% for h in history %}
+            <p>
+                {{ h.evaluated_at[:16].replace('T', ' ') }} -
+                {{ h.outcome.hits }}/{{ h.outcome.evaluated_legs }} rätt
+                {% if h.payout %}, netto {{ h.payout.net }} kr{% endif %}
+            </p>
+            {% endfor %}
+            <p style="color:#f0883e; font-size:0.85rem;">
+                OBS: olika utfall mellan utvärderingar beror pa att ATG:s
+                resultatdata for loppet andrats mellan hamtningarna.
+            </p>
+        </div>
+        {% endif %}
+
+        {% if not fully_evaluated %}
         <form method="post" action="{{ url_for('utvardera', prediction_id=prediction_id) }}">
-            <button type="submit">{{ 'Utvardera igen' if fully_evaluated else 'Utvardera' }}</button>
+            <button type="submit">Utvardera</button>
         </form>
+        {% else %}
+        <p style="text-align:center; margin-top:8px;">
+            <a href="#" onclick="document.getElementById('force-eval-form').submit(); return false;"
+               style="color:#8b949e; font-size:0.85rem;">
+                Tvinga omvärdering
+            </a>
+        </p>
+        <form id="force-eval-form" method="post" action="{{ url_for('utvardera', prediction_id=prediction_id) }}" style="display:none;"></form>
+        {% endif %}
 
         {% for leg in legs %}
         <div class="card leg">
@@ -472,7 +644,8 @@ def visa_spel(prediction_id):
         <a class="footer-link" href="/">Hem</a>
     """, prediction=prediction, legs=legs, outcome=outcome, leg_reports=leg_reports,
         fully_evaluated=_is_fully_evaluated(outcome), payout=prediction.get("payout"),
-        prediction_id=prediction_id)
+        prediction_id=prediction_id, strategy_labels=strategy_labels,
+        sibling=sibling, comparison=comparison, history=prediction.get("evaluation_history"))
 
 
 @app.route("/utvardera/<prediction_id>", methods=["POST"])
@@ -485,6 +658,7 @@ def utvardera(prediction_id):
 @app.route("/strategier")
 def strategier():
     stats = {}
+    by_game = {}
 
     if os.path.isdir(PREDICTIONS_DIR):
         for filename in os.listdir(PREDICTIONS_DIR):
@@ -524,6 +698,21 @@ def strategier():
             else:
                 entry["net"] -= data.get("total_cost", 0)
 
+            #
+            # Samla ihop per lopp (game_id) for parvis jamforelse,
+            # bara for spel som faktiskt har en angiven strategi.
+            #
+            game_id = data.get("game_id")
+            if game_id and data.get("strategy") and payout:
+                by_game.setdefault(game_id, []).append({
+                    "strategy": data.get("strategy"),
+                    "spel": data.get("spel", "?"),
+                    "track": data.get("track", "?"),
+                    "date": data.get("date", "?"),
+                    "net": payout.get("net", 0),
+                    "prediction_id": filename[:-5],
+                })
+
     strategy_labels = {
         "continuous": "Ny princip (kontinuerlig gardering)",
         "legacy": "Gammal princip (fast gardering)",
@@ -548,8 +737,51 @@ def strategier():
 
     rows.sort(key=lambda r: r["net"], reverse=True)
 
+    #
+    # Bygg parvisa jamforelser - bara for lopp dar bade continuous
+    # och legacy faktiskt har utvarderats.
+    #
+    pairs = []
+    for game_id, entries in by_game.items():
+        by_strategy = {e["strategy"]: e for e in entries}
+        if "continuous" in by_strategy and "legacy" in by_strategy:
+            cont = by_strategy["continuous"]
+            leg = by_strategy["legacy"]
+            pairs.append({
+                "spel": cont["spel"],
+                "track": cont["track"],
+                "date": cont["date"],
+                "continuous_net": round(cont["net"], 2),
+                "legacy_net": round(leg["net"], 2),
+                "diff": round(cont["net"] - leg["net"], 2),
+                "continuous_id": cont["prediction_id"],
+                "legacy_id": leg["prediction_id"],
+            })
+
+    pairs.sort(key=lambda p: p["date"], reverse=True)
+
     return render_page("""
         <h1>Strategijämförelse</h1>
+
+        {% if pairs %}
+        <h2>Parvis per lopp</h2>
+        {% for p in pairs %}
+        <div class="card">
+            <b>{{ p.spel }} - {{ p.track }} - {{ p.date }}</b>
+            <p>Ny princip: <a href="{{ url_for('visa_spel', prediction_id=p.continuous_id) }}">{{ p.continuous_net }} kr</a></p>
+            <p>Gammal princip: <a href="{{ url_for('visa_spel', prediction_id=p.legacy_id) }}">{{ p.legacy_net }} kr</a></p>
+            <p>
+                Skillnad:
+                <b class="{{ 'hit' if p.diff >= 0 else 'miss' }}">
+                    {{ '+' if p.diff >= 0 else '' }}{{ p.diff }} kr
+                </b>
+                {{ '(ny princip battre)' if p.diff > 0 else '(gammal princip battre)' if p.diff < 0 else '(lika)' }}
+            </p>
+        </div>
+        {% endfor %}
+        {% endif %}
+
+        <h2>Sammanlagt över alla spel</h2>
         {% if not rows %}
         <p>Inga utvärderade spel ännu att jämföra.</p>
         {% else %}
@@ -572,7 +804,7 @@ def strategier():
         {% endif %}
 
         <a class="footer-link" href="/">Hem</a>
-    """, rows=rows)
+    """, rows=rows, pairs=pairs)
 
 
 if __name__ == "__main__":

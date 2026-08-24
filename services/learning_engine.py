@@ -79,12 +79,30 @@ class LearningEngine:
             "legs": leg_reports,
         }
 
-        prediction["outcome"] = outcome
-
+        payout = None
         if len(undecided) == 0:
-            prediction["payout"] = self._calculate_payout(prediction, outcome)
-        else:
-            prediction["payout"] = None
+            payout = self._calculate_payout(prediction, outcome)
+
+        #
+        # Spara varje utvardering i en historik istallet for att
+        # bara skriva over det tidigare resultatet. ATG:s
+        # resultatdata for redan avgjorda lopp kan i sallsynta
+        # fall andras mellan tva hamtningar (t.ex. vid en
+        # efterhandsrattning), och utan historik skulle en sadan
+        # andring annars radera ett tidigare, korrekt resultat
+        # utan mojlighet att aterstalla det.
+        #
+        history_entry = {
+            "evaluated_at": datetime.now(timezone.utc).isoformat(),
+            "outcome": outcome,
+            "payout": payout,
+        }
+
+        history = prediction.setdefault("evaluation_history", [])
+        history.append(history_entry)
+
+        prediction["outcome"] = outcome
+        prediction["payout"] = payout
 
         with open(path, "w", encoding="utf-8") as f:
             json.dump(prediction, f, ensure_ascii=False, indent=2)
@@ -298,6 +316,7 @@ class LearningEngine:
                     "track": leg["track"],
                     "distance": leg.get("distance"),
                     "start_method": leg.get("start_method"),
+                    "track_condition": leg.get("track_condition"),
                     "kaosvarde": leg.get("kaosvarde"),
                     "weather": prediction.get("weather"),
 
@@ -312,6 +331,8 @@ class LearningEngine:
                     "shod_back": horse.get("shod_back"),
                     "shoe_changed": horse.get("shoe_changed"),
                     "sulky_changed": horse.get("sulky_changed"),
+                    "cart_type": horse.get("cart_type"),
+                    "career_earnings": horse.get("career_earnings"),
                     "driver_win_pct": horse.get("driver_win_pct"),
                     "trainer_win_pct": horse.get("trainer_win_pct"),
                     "horse_win_pct": horse.get("horse_win_pct"),
@@ -325,6 +346,12 @@ class LearningEngine:
                     "actual_finish_order": result.get("finish_order"),
                     "actual_place": result.get("place"),
                     "actual_final_odds": result.get("final_odds"),
+                    "actual_scratched": result.get("scratched"),
+                    "actual_galloped": result.get("galloped"),
+                    "actual_disqualified": result.get("disqualified"),
+                    "actual_prize_money": result.get("prize_money"),
+                    "actual_km_time": result.get("km_time"),
+                    "actual_km_time_status_code": result.get("km_time_status_code"),
                 }
 
                 f.write(json.dumps(observation, ensure_ascii=False))
