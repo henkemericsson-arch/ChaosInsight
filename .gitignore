@@ -2,7 +2,6 @@
 __pycache__/
 *.py[cod]
 *.pyo
-
 # Virtual environment
 .venv/
 
@@ -11,10 +10,10 @@ logs/*.log
 
 # Sparade systemförslag (genereras lokalt av PredictionLogger,
 # behöver inte ligga i repot)
-data/races/*.json
+
 
 # OS
 .DS_Store
 Thumbs.db
 data/history/*.jsonl
-data/races/*.json
+
