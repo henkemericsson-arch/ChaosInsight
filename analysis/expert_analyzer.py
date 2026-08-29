@@ -5,7 +5,6 @@ from providers.rekatochklart_provider import RekatochklartProvider
 
 
 class ExpertAnalyzer:
-
     #
     # Hamtar experttips fran flera kallor (Travcash,
     # Rekatochklart, fler kan laggas till) och raknar ut ett
@@ -25,12 +24,10 @@ class ExpertAnalyzer:
     name = "Expertanalys"
 
     def __init__(self):
-
         self.travcash = TravcashProvider()
         self.rekatochklart = RekatochklartProvider()
 
     def collect_tips(self, game_id):
-
         sources = EXPERT_SOURCES.get(game_id)
 
         if not sources:
@@ -44,28 +41,20 @@ class ExpertAnalyzer:
         tips_by_race = {}
 
         if "travcash_slug" in sources:
-
             try:
-
                 travcash_tips = self.travcash.collect(
                     sources["travcash_slug"]
                 )
-
                 self._merge(tips_by_race, "travcash", travcash_tips)
-
             except Exception as e:
                 print(f"[Expertanalys] Kunde inte hamta Travcash: {e!r}")
 
         if "rekatochklart_url" in sources:
-
             try:
-
                 reka_tips = self.rekatochklart.collect(
                     sources["rekatochklart_url"]
                 )
-
                 self._merge(tips_by_race, "rekatochklart", reka_tips)
-
             except Exception as e:
                 print(
                     f"[Expertanalys] Kunde inte hamta "
@@ -83,47 +72,42 @@ class ExpertAnalyzer:
 
     @staticmethod
     def _merge(target, source_name, tips_by_leg_label):
-
         for leg_label, numbers in tips_by_leg_label.items():
-
             race_number = int(leg_label.split("-")[-1])
-
             target.setdefault(race_number, {})[source_name] = numbers
 
     def apply(self, race, leg_index, tips_by_race):
-
         #
-        # OBS: race.race_number ar ATG:s absoluta loppnummer
-        # for dagen pa banan (t.ex. lopp 3-10), INTE vilket
-        # delopp (1-8) det ar inom sjalva V85-omgangen. Tips-
-        # kallorna numrerar sina lopp efter position inom
-        # omgangen ("V85-1".."V85-8"), sa vi maste matcha mot
-        # leg_index (racets position i analysis_data.races)
-        # istallet for race.race_number.
+        # leg_index ar loppets position inom sjalva V-omgangen
+        # (1-8), rakat av anroparen via enumerate(analysis_data.
+        # races, start=1). Tipskallorna numrerar sina lopp pa
+        # samma satt ("V85-1".."V85-8").
         #
-
+        # Sedan race_parser.py fixades ar race.race_number numera
+        # ocksa samma listposition (1-8) - de tva vardena ar alltsa
+        # idag identiska. leg_index anvands har fortfarande separat
+        # eftersom apply() anropas innan race.race_number
+        # nodvandigtvis hunnit vara konsekvent satt i alla
+        # anropsflöden - men om/nar det garanteras racker det med
+        # race.race_number direkt, vilket skulle forenkla bort
+        # behovet av att trada leg_index genom anropskedjan.
+        #
         leg_tips = tips_by_race.get(leg_index)
 
         if not leg_tips:
-
             #
             # Inga experttips insamlade for det har loppet -
             # lamna expert_index osatt (CrowdEngine hanterar
             # det genom att inte rakna in komponenten alls).
             #
-
             return
 
         total_sources = len(leg_tips)
-
         for horse in race.horses:
-
             mentions = sum(
                 1
                 for numbers in leg_tips.values()
                 if horse.number in numbers
             )
-
             expert_index = round(100 * mentions / total_sources, 1)
-
             horse.set_metric("expert_index", expert_index)

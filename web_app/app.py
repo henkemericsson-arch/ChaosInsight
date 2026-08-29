@@ -1,9 +1,11 @@
 import sys
 import os
 import json
+import threading
 from datetime import datetime
+from zoneinfo import ZoneInfo
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-from flask import Flask, request, redirect, url_for, render_template_string
+from flask import Flask, request, redirect, url_for, render_template_string, jsonify, Response
 
 from services.race_collector import RaceCollector
 from services.analysis_data_collector import AnalysisDataCollector
@@ -20,6 +22,8 @@ from analysis.expert_analyzer import ExpertAnalyzer
 
 from config.bet_types import SYSTEM_BET_TYPES
 from models.game import Game
+
+from script.backfill_history import run_backfill, load_progress, should_run_backfill
 
 app = Flask(__name__)
 race_collector = RaceCollector()
@@ -46,17 +50,65 @@ def _is_historical_date(date_str):
         return False
     return race_date < datetime.now().date()
 
+
+#
+# PWA-ikonerna serveras som riktiga filer i web_app/static/ (se
+# manifest.json nedan) istallet for inbaddade som base64-text -
+# de nya ikonerna ar for stora for att vara lampliga att badda in
+# direkt i kallkoden.
+#
+
+MANIFEST_JSON = {
+    "name": "Chaos Insight",
+    "short_name": "ChaosInsight",
+    "start_url": "/",
+    "display": "standalone",
+    "background_color": "#000000",
+    "theme_color": "#000000",
+    "icons": [
+        {"src": "/static/icon-192.png", "sizes": "192x192", "type": "image/png"},
+        {"src": "/static/icon-512.png", "sizes": "512x512", "type": "image/png"},
+    ],
+}
+
+
+@app.route("/manifest.json")
+def manifest():
+    return jsonify(MANIFEST_JSON)
+
+
+@app.route("/service-worker.js")
+def service_worker():
+    #
+    # Minimal service worker - kravs av Chrome for att "Lagg till pa
+    # startskarmen" ska ge en riktig app-liknande upplevelse
+    # (fullskarm, egen ikon). Gor ingen egen cachning - allt gar
+    # fortfarande direkt mot den lokala Flask-servern.
+    #
+    body = "self.addEventListener('fetch', function() {});"
+    return Response(body, mimetype="application/javascript")
+
+
+
 PAGE_HEAD = """<!DOCTYPE html>
 <html lang="sv">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#000000">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Chaos Insight">
+<link rel="manifest" href="/manifest.json">
+<link rel="apple-touch-icon" href="/static/icon-192.png">
+<link rel="icon" href="/static/icon-192.png">
 <title>Chaos Insight</title>
 <style>
   * { box-sizing: border-box; }
   html, body {
     margin: 0; padding: 0; width: 100%;
-    background:#0d1117; color:#e6edf3;
+    background:#000000; color:#e6edf3;
     font-family: -apple-system, Roboto, Helvetica, Arial, sans-serif;
   }
   body {
@@ -76,11 +128,11 @@ PAGE_HEAD = """<!DOCTYPE html>
   }
   select { -webkit-appearance: none; appearance: none; }
   button {
-    background:#238636; color:white; border:none;
+    background:#07e2f8; color:#04141a; border:none;
     font-weight:bold; cursor:pointer;
     min-height: 48px;
   }
-  button:active { background:#2ea043; }
+  button:active { background:#3aeeff; }
   button:disabled { background:#30363d; color:#6e7681; cursor:not-allowed; }
   .card {
     background:#161b22; border:1px solid #30363d; border-radius:10px;
@@ -98,12 +150,41 @@ PAGE_HEAD = """<!DOCTYPE html>
   .hit { color:#3fb950; margin-top: 6px; }
   .miss { color:#f85149; margin-top: 6px; }
   .undecided { color:#8b949e; margin-top: 6px; }
+
+  @media print {
+    html, body { background:#fff; color:#000; max-width:100%; }
+    .no-print { display:none !important; }
+    .card { background:#fff; border:1px solid #000; }
+    a { color:#000; }
+    h1, h2 { color:#000; }
+    .kaos { color:#000; }
+    .hit, .miss, .undecided { color:#000; }
+    input, select, button { display:none; }
+    .print-only { display:block !important; }
+  }
+  .print-only { display:none; }
+  .brand-header { text-align:center; padding-top:2px; margin-bottom:4px; }
+  .brand-header img { max-width:200px; width:55%; height:auto; }
+  .brand-seal {
+    position:fixed; top:50%; left:50%;
+    transform:translate(-50%, -50%);
+    width:70%; max-width:520px;
+    opacity:0.10; z-index:-1;
+  }
 </style>
 </head>
 <body>
+<div class="no-print brand-header">
+  <img src="{{ url_for('static', filename='brand-dark.jpg') }}" alt="ChaosInsight">
+</div>
 """
 
 PAGE_FOOT = """
+<script>
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/service-worker.js').catch(function() {});
+  }
+</script>
 </body>
 </html>
 """
@@ -111,6 +192,145 @@ PAGE_FOOT = """
 
 def render_page(body_template, **context):
     return render_template_string(PAGE_HEAD + body_template + PAGE_FOOT, **context)
+
+
+def _format_local_time(raw_saved_at):
+    #
+    # saved_at sparas alltid i UTC (datetime.now(timezone.utc)) -
+    # konvertera till svensk lokal tid innan visning, sa att
+    # sommar-/vintertid hanteras automatiskt. Delad av
+    # list_predictions() och visa_spel().
+    #
+    if not raw_saved_at:
+        return ""
+    try:
+        saved_dt_utc = datetime.fromisoformat(raw_saved_at)
+        saved_dt_local = saved_dt_utc.astimezone(ZoneInfo("Europe/Stockholm"))
+        return saved_dt_local.strftime("%H:%M")
+    except ValueError:
+        return ""
+
+
+#
+# SMHI:s standardiserade vadersymbol-koder (1-27), sasom de
+# anvands i weather_symbol-faltet. Om nagon enskild kod visar
+# fel text jamfort med det faktiska vadret - sag till, sa
+# rattar vi just den posten.
+#
+WEATHER_SYMBOLS = {
+    1: "Klart", 2: "Lätt molnighet", 3: "Halvklart", 4: "Molnigt",
+    5: "Mycket moln", 6: "Mulet", 7: "Dimma",
+    8: "Lätta regnskurar", 9: "Måttliga regnskurar", 10: "Kraftiga regnskurar",
+    11: "Åska", 12: "Lätta snöbyar (snöblandat)", 13: "Måttliga snöbyar (snöblandat)",
+    14: "Kraftiga snöbyar (snöblandat)", 15: "Lätta snöbyar", 16: "Måttliga snöbyar",
+    17: "Kraftiga snöbyar", 18: "Lätt regn", 19: "Måttligt regn", 20: "Kraftigt regn",
+    21: "Åska", 22: "Lätt snöblandat regn", 23: "Måttligt snöblandat regn",
+    24: "Kraftigt snöblandat regn", 25: "Lätt snöfall", 26: "Måttligt snöfall",
+    27: "Kraftigt snöfall",
+}
+
+
+def _format_weather(weather):
+    #
+    # weather sparas som ett objekt fran den meteorologiska
+    # kallan, t.ex.:
+    # {"valid_time": "...", "temperature_c": 13.6,
+    #  "wind_speed_ms": 1.8, "precipitation_mm": 0.0,
+    #  "weather_symbol": 3}
+    #
+    if not weather:
+        return ""
+    if isinstance(weather, str):
+        return weather
+    if not isinstance(weather, dict):
+        return str(weather)
+
+    parts = []
+
+    symbol_code = weather.get("weather_symbol")
+    if symbol_code is not None:
+        parts.append(WEATHER_SYMBOLS.get(symbol_code, f"Symbol {symbol_code}"))
+
+    temp = weather.get("temperature_c")
+    if temp is not None:
+        parts.append(f"{temp}°C")
+
+    wind = weather.get("wind_speed_ms")
+    if wind is not None:
+        parts.append(f"{wind} m/s")
+
+    precipitation = weather.get("precipitation_mm")
+    if precipitation:
+        parts.append(f"{precipitation} mm")
+
+    return ", ".join(parts)
+
+
+#
+# Enkelt delat tillstand for bakgrundspafyllningen av historik-
+# databasen. Uppdateras av _run_backfill_in_background(), som kors
+# i en separat trad - lases av startsidan for att visa status samt
+# av "Uppdatera"-knappens rutt for att undvika dubbelkorningar.
+#
+_backfill_status = {
+    "running": False,
+    "last_summary": None,
+    "last_error": None,
+}
+_backfill_lock = threading.Lock()
+
+
+def _run_backfill_in_background():
+    with _backfill_lock:
+        if _backfill_status["running"]:
+            return
+        _backfill_status["running"] = True
+        _backfill_status["last_error"] = None
+
+    try:
+        summary = run_backfill()
+        _backfill_status["last_summary"] = summary
+    except Exception as exc:
+        _backfill_status["last_error"] = str(exc)
+        print(f"[Backfill-bakgrund] Fel: {exc}")
+    finally:
+        _backfill_status["running"] = False
+
+
+def _start_backfill_thread():
+    thread = threading.Thread(target=_run_backfill_in_background, daemon=True)
+    thread.start()
+
+
+def _maybe_start_automatic_backfill():
+    #
+    # Kors en gang vid appstart. Startar bara pafyllningen om det
+    # gatt tillrackligt lange sedan senaste lyckade genomgangen
+    # (se MIN_HOURS_BETWEEN_AUTO_RUNS i backfill_history.py) - sa
+    # att tata omstarter av servern inte utloser onodiga ATG-anrop.
+    #
+    progress = load_progress()
+    if should_run_backfill(progress):
+        print("[Backfill] Startar automatisk pafyllning i bakgrunden...")
+        _start_backfill_thread()
+    else:
+        print("[Backfill] Hoppar over automatisk pafyllning - kordes nyligen.")
+
+
+def _detect_xpress(tracks):
+    #
+    # V86 (och ibland andra flerloppsspel) kors som "Xpress" pa
+    # onsdagar - da delas loppen mellan tva banor i samma spel
+    # (t.ex. 4 lopp pa Solvalla, 4 pa Åby). Varje lopp har redan
+    # sin egen faktiska bana (satt av RaceParser direkt fran
+    # ATG:s per-lopp-data), sa Xpress upptacks helt enkelt genom
+    # att se om loppen i spelet spanner over mer an en bana.
+    #
+    unique_tracks = sorted({t for t in tracks if t})
+    return {
+        "is_xpress": len(unique_tracks) > 1,
+        "tracks": unique_tracks,
+    }
 
 
 def _is_fully_evaluated(outcome):
@@ -135,10 +355,9 @@ def list_predictions():
             continue
 
         prediction_id = filename[:-5]
-        saved_time = ""
         raw_saved_at = data.get("saved_at", "")
-        if "T" in raw_saved_at:
-            saved_time = raw_saved_at.split("T")[1][:5]
+        legs_data = data.get("legs", [])
+        is_xpress = _detect_xpress(leg.get("track") for leg in legs_data)["is_xpress"]
 
         items.append({
             "game_id": prediction_id,
@@ -146,9 +365,11 @@ def list_predictions():
             "track": data.get("track", "?"),
             "date": data.get("date", "?"),
             "saved_at": raw_saved_at,
-            "saved_time": saved_time,
+            "saved_time": _format_local_time(raw_saved_at),
             "strategy": data.get("strategy"),
+            "risk": data.get("risk"),
             "evaluated": _is_fully_evaluated(data.get("outcome")),
+            "is_xpress": is_xpress,
         })
 
     items.sort(key=lambda item: item["saved_at"], reverse=True)
@@ -223,59 +444,102 @@ def index():
         return redirect(url_for("banor", date=date))
 
     predictions = list_predictions()
+    open_predictions = [p for p in predictions if not p["evaluated"]]
+    archived_predictions = [p for p in predictions if p["evaluated"]]
+
+    progress = load_progress()
+    raw_last_backfill = progress.get("last_run_completed_at")
+    last_backfill_at = None
+    if raw_last_backfill:
+        try:
+            dt_utc = datetime.fromisoformat(raw_last_backfill)
+            dt_local = dt_utc.astimezone(ZoneInfo("Europe/Stockholm"))
+            last_backfill_at = dt_local.strftime("%Y-%m-%d %H:%M")
+        except ValueError:
+            last_backfill_at = None
 
     return render_page("""
-        <h1>Chaos Insight</h1>
         <form method="post">
             <label>Datum</label>
             <input type="date" name="date" required>
             <button type="submit">Visa banor</button>
         </form>
 
-        <h2>Tidigare spel</h2>
-        {% if not predictions %}
-        <p>Inga sparade spel an.</p>
+        <h2>Öppna</h2>
+        {% if not open_predictions %}
+        <p>Inga öppna spel just nu.</p>
         {% else %}
-        <form id="pred-form">
-            <select id="pred-select" name="game_id">
-                {% for p in predictions %}
-                <option value="{{ p.game_id }}" data-evaluated="{{ '1' if p.evaluated else '0' }}"
-                    style="color: {{ '#e6edf3' if p.evaluated else '#3fb950' }};">
-                    {{ p.spel }} - {{ p.track }} - {{ p.date }}{% if p.saved_time %} ({{ p.saved_time }}){% endif %}{% if p.strategy == 'legacy' %} [gammal]{% elif p.strategy == 'continuous' %} [ny]{% endif %}{{ ' - utvarderat' if p.evaluated else '' }}
+        <form id="open-pred-form">
+            <select id="open-pred-select" name="game_id" style="font-size:0.9rem;">
+                {% for p in open_predictions %}
+                <option value="{{ p.game_id }}">
+                    {{ p.spel }}{% if p.is_xpress %} Xpress{% endif %} - {{ p.track }} - {{ p.date[2:] }}{% if p.saved_time %} ({{ p.saved_time }}){% endif %} [{{ 'G' if p.strategy == 'legacy' else 'N' if p.strategy == 'continuous' else '?' }}] [{{ p.risk[0] if p.risk else '?' }}]
                 </option>
                 {% endfor %}
             </select>
             <div class="btn-row">
-                <button type="button" onclick="goVisa()">Visa</button>
-                <button type="button" id="eval-btn" onclick="goUtvardera()">Utvardera</button>
+                <button type="button" onclick="goVisa('open-pred-select')">Visa</button>
+                <button type="button" onclick="goUtvardera('open-pred-form', 'open-pred-select')">Utvardera</button>
             </div>
         </form>
+        {% endif %}
+
+        <h2>Arkiv</h2>
+        {% if not archived_predictions %}
+        <p>Inga arkiverade spel an.</p>
+        {% else %}
+        <form id="archive-pred-form">
+            <select id="archive-pred-select" name="game_id" style="font-size:0.9rem;">
+                {% for p in archived_predictions %}
+                <option value="{{ p.game_id }}">
+                    {{ p.spel }}{% if p.is_xpress %} Xpress{% endif %} - {{ p.track }} - {{ p.date[2:] }}{% if p.saved_time %} ({{ p.saved_time }}){% endif %} [{{ 'G' if p.strategy == 'legacy' else 'N' if p.strategy == 'continuous' else '?' }}] [{{ p.risk[0] if p.risk else '?' }}]{% if p.evaluated %} - ✓{% endif %}
+                </option>
+                {% endfor %}
+            </select>
+            <div class="btn-row">
+                <button type="button" onclick="goVisa('archive-pred-select')">Visa</button>
+            </div>
+        </form>
+        {% endif %}
+
         <script>
-            function selectedGameId() {
-                return document.getElementById('pred-select').value;
+            function goVisa(selectId) {
+                var select = document.getElementById(selectId);
+                window.location.href = '/visa/' + select.value;
             }
-            function goVisa() {
-                window.location.href = '/visa/' + selectedGameId();
-            }
-            function goUtvardera() {
-                var form = document.getElementById('pred-form');
-                form.action = '/utvardera/' + selectedGameId();
+            function goUtvardera(formId, selectId) {
+                var form = document.getElementById(formId);
+                var select = document.getElementById(selectId);
+                form.action = '/utvardera/' + select.value;
                 form.method = 'post';
                 form.submit();
             }
-            function updateEvalBtn() {
-                var select = document.getElementById('pred-select');
-                var opt = select.options[select.selectedIndex];
-                var btn = document.getElementById('eval-btn');
-                btn.disabled = (opt.getAttribute('data-evaluated') === '1');
-            }
-            document.getElementById('pred-select').addEventListener('change', updateEvalBtn);
-            updateEvalBtn();
         </script>
+
+        <h2>Historik</h2>
+        {% if backfill_running %}
+        <p style="color:#8b949e; font-size:0.9rem;">Uppdaterar historikdatabasen i bakgrunden...</p>
+        {% elif last_backfill_at %}
+        <p style="color:#8b949e; font-size:0.9rem;">Historik senast uppdaterad: {{ last_backfill_at }}</p>
+        {% else %}
+        <p style="color:#8b949e; font-size:0.9rem;">Historik har inte uppdaterats an.</p>
         {% endif %}
+        <form method="post" action="/uppdatera-historik">
+            <button type="submit" {% if backfill_running %}disabled{% endif %}>
+                {{ "Uppdaterar..." if backfill_running else "Uppdatera historik" }}
+            </button>
+        </form>
 
         <a class="footer-link" href="/strategier">Strategijämförelse</a>
-    """, predictions=predictions)
+    """, open_predictions=open_predictions, archived_predictions=archived_predictions,
+        backfill_running=_backfill_status["running"], last_backfill_at=last_backfill_at)
+
+
+@app.route("/uppdatera-historik", methods=["POST"])
+def uppdatera_historik():
+    if not _backfill_status["running"]:
+        _start_backfill_thread()
+    return redirect(url_for("index"))
 
 
 @app.route("/banor")
@@ -481,9 +745,18 @@ def resultat():
         "legacy": "Gammal princip (fast gardering)",
     }
 
+    xpress = _detect_xpress(race.track for race in analysis_data.races)
+
     return render_page("""
         <h1>Systemförslag</h1>
-        <p>{{ game_name }} - {{ bana }} - {{ date }}</p>
+        <p>
+            {{ game_name }}{% if xpress.is_xpress %} Xpress{% endif %} - {{ bana }} - {{ date }}
+        </p>
+        {% if xpress.is_xpress %}
+        <p style="color:#8b949e; font-size:0.9rem;">
+            Loppen i detta spel kors pa flera banor: {{ xpress.tracks|join(" + ") }}.
+        </p>
+        {% endif %}
 
         {% for result in results %}
         <h2>{{ strategy_labels.get(result.strategy, result.strategy) }}</h2>
@@ -492,6 +765,7 @@ def resultat():
         {% for leg in result.legs %}
         <div class="card leg">
             <b>{{ leg.race }}</b>
+            {% if xpress.is_xpress %}<div style="color:#8b949e; font-size:0.85rem;">{{ leg.race.track }}</div>{% endif %}
             <div class="kaos">Kaosvärde: {{ "%.1f"|format(leg.race.kaosvarde or 0) }}</div>
             {% for h in leg.horses %}{{ h.number }}. {{ h.name }}{% if not loop.last %}, {% endif %}{% endfor %}
         </div>
@@ -504,7 +778,7 @@ def resultat():
 
         <a class="footer-link" href="/">Hem</a>
     """, results=results, strategy_labels=strategy_labels, game_name=game_name,
-        bana=bana, date=date, max_cost=max_cost)
+        bana=bana, date=date, max_cost=max_cost, xpress=xpress)
 
 
 @app.route("/visa/<prediction_id>")
@@ -515,6 +789,10 @@ def visa_spel(prediction_id):
 
     legs = sorted(prediction["legs"], key=lambda leg: leg["race_number"])
     outcome = prediction.get("outcome")
+
+    saved_time = _format_local_time(prediction.get("saved_at", ""))
+    weather_display = _format_weather(prediction.get("weather"))
+    xpress = _detect_xpress(leg.get("track") for leg in legs)
 
     leg_reports = {}
     if outcome:
@@ -541,14 +819,49 @@ def visa_spel(prediction_id):
         }
 
     return render_page("""
-        <h1>{{ prediction.spel }}</h1>
+        <img src="{{ url_for('static', filename='brand-light.jpg') }}" alt="" class="print-only brand-seal">
+
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:2px;">
+            <h1 style="margin:0;">{{ prediction.spel }}{% if xpress.is_xpress %} Xpress{% endif %}</h1>
+            <div class="no-print" style="display:flex; gap:8px;">
+                <button type="button" onclick="shareCoupon()"
+                    style="width:auto; min-height:auto; padding:8px 14px; font-size:0.85rem;">
+                    Dela
+                </button>
+                <button type="button" onclick="saveAsImage()"
+                    style="width:auto; min-height:auto; padding:8px 14px; font-size:0.85rem;">
+                    Bild
+                </button>
+            </div>
+        </div>
+        <p style="margin-top:0;">
+            {% if xpress.is_xpress %}{{ xpress.tracks|join(" + ") }}{% else %}{{ prediction.track }}{% endif %} - {{ prediction.date }}
+        </p>
+
+        <p style="display:flex; justify-content:space-between;">
+            <span>{{ saved_time }}</span>
+            <span>{{ weather_display }}</span>
+        </p>
+
+        <p style="font-style:italic; font-size:0.9rem; margin-bottom:2px;">
+            Total kostnad: <b>{{ prediction.total_cost }} kr</b> (budget {{ prediction.max_cost }} kr)
+        </p>
+        <p style="font-style:italic; font-size:0.9rem; margin-top:0;">
+            Risk: {{ prediction.risk or '-' }}
+        </p>
+
         {% if prediction.strategy %}
         <p style="color:#8b949e; font-size:0.9rem;">
             {{ strategy_labels.get(prediction.strategy, prediction.strategy) }}
         </p>
         {% endif %}
-        <p>{{ prediction.track }} - {{ prediction.date }}</p>
-        <p>Total kostnad: <b>{{ prediction.total_cost }} kr</b> (budget {{ prediction.max_cost }} kr)</p>
+
+        {% if sibling and not comparison %}
+        <p style="color:#8b949e; font-size:0.85rem;">
+            Ett system med {{ strategy_labels.get(sibling.strategy, sibling.strategy) }} finns ocksa sparat for det har loppet,
+            men jamforelsen visas forst nar bada ar utvarderade.
+        </p>
+        {% endif %}
 
         {% if outcome %}
         <p>
@@ -584,11 +897,6 @@ def visa_spel(prediction_id):
             </p>
             <a href="{{ url_for('visa_spel', prediction_id=comparison.sibling_id) }}">Visa {{ comparison.sibling_label }}</a>
         </div>
-        {% elif sibling %}
-        <p style="color:#8b949e; font-size:0.85rem;">
-            Ett system med {{ strategy_labels.get(sibling.strategy, sibling.strategy) }} finns ocksa sparat for det har loppet,
-            men jamforelsen visas forst nar bada ar utvarderade.
-        </p>
         {% endif %}
 
         {% if history and history|length > 1 %}
@@ -609,22 +917,23 @@ def visa_spel(prediction_id):
         {% endif %}
 
         {% if not fully_evaluated %}
-        <form method="post" action="{{ url_for('utvardera', prediction_id=prediction_id) }}">
+        <form class="no-print" method="post" action="{{ url_for('utvardera', prediction_id=prediction_id) }}">
             <button type="submit">Utvardera</button>
         </form>
         {% else %}
-        <p style="text-align:center; margin-top:8px;">
+        <p class="no-print" style="text-align:center; margin-top:8px;">
             <a href="#" onclick="document.getElementById('force-eval-form').submit(); return false;"
                style="color:#8b949e; font-size:0.85rem;">
                 Tvinga omvärdering
             </a>
         </p>
-        <form id="force-eval-form" method="post" action="{{ url_for('utvardera', prediction_id=prediction_id) }}" style="display:none;"></form>
+        <form id="force-eval-form" class="no-print" method="post" action="{{ url_for('utvardera', prediction_id=prediction_id) }}" style="display:none;"></form>
         {% endif %}
 
         {% for leg in legs %}
         <div class="card leg">
             <b>V{{ leg.race_number }}</b>
+            {% if xpress.is_xpress %}<div style="color:#8b949e; font-size:0.85rem;">{{ leg.track }}</div>{% endif %}
             <div class="kaos">Kaosvärde: {{ "%.1f"|format(leg.kaosvarde or 0) }}</div>
             {% for h in leg.horses if h.chosen %}{{ h.number }}. {{ h.name }}{% if not loop.last %}, {% endif %}{% endfor %}
 
@@ -641,10 +950,146 @@ def visa_spel(prediction_id):
         </div>
         {% endfor %}
 
-        <a class="footer-link" href="/">Hem</a>
+        <a class="footer-link no-print" href="/">Hem</a>
+
+        <!--
+          Dold "exportversion" av kupongen - permanent ljust stylad
+          (till skillnad fran resten av sidan, som bara byter till
+          ljust lage via @media print). html2canvas kan inte se
+          @media print-regler eftersom den bara renderar det som
+          redan visas pa skarmen, sa den har versionen finns som
+          en separat, alltid-ljus kopia, positionerad utanfor
+          skarmen tills "Bild"-knappen trycks.
+        -->
+        <div id="kupong-export" style="position:absolute; left:-9999px; top:0; width:760px;
+             background:#ffffff; color:#000000; padding:32px;
+             font-family:-apple-system, Roboto, Helvetica, Arial, sans-serif;">
+            <img src="{{ url_for('static', filename='brand-light.jpg') }}" alt=""
+                 style="position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
+                        width:70%; max-width:500px; opacity:0.10; z-index:0;">
+            <div style="position:relative; z-index:1;">
+                <h1 style="color:#000; margin:0 0 2px; font-size:1.8rem;">{{ prediction.spel }}{% if xpress.is_xpress %} Xpress{% endif %}</h1>
+                <p style="margin-top:0;">
+                    {% if xpress.is_xpress %}{{ xpress.tracks|join(" + ") }}{% else %}{{ prediction.track }}{% endif %} - {{ prediction.date }}
+                </p>
+                <p style="display:flex; justify-content:space-between;">
+                    <span>{{ saved_time }}</span>
+                    <span>{{ weather_display }}</span>
+                </p>
+                <p style="font-style:italic; font-size:0.95rem; margin-bottom:2px;">
+                    Total kostnad: <b>{{ prediction.total_cost }} kr</b> (budget {{ prediction.max_cost }} kr)
+                </p>
+                <p style="font-style:italic; font-size:0.95rem; margin-top:0;">
+                    Risk: {{ prediction.risk or '-' }}
+                </p>
+                {% if prediction.strategy %}
+                <p style="color:#444; font-size:0.95rem;">
+                    {{ strategy_labels.get(prediction.strategy, prediction.strategy) }}
+                </p>
+                {% endif %}
+                {% if sibling and not comparison %}
+                <p style="color:#444; font-size:0.9rem;">
+                    Ett system med {{ strategy_labels.get(sibling.strategy, sibling.strategy) }} finns ocksa sparat for det har loppet,
+                    men jamforelsen visas forst nar bada ar utvarderade.
+                </p>
+                {% endif %}
+                {% if outcome %}
+                <p>
+                    Traffsakerhet: {{ outcome.hits }}/{{ outcome.evaluated_legs }} avgjorda lopp
+                    {% if outcome.undecided_legs %}({{ outcome.undecided_legs }} ej avgjorda){% endif %}
+                </p>
+                {% endif %}
+                {% if payout %}
+                <div style="border:1px solid #000; border-radius:10px; padding:14px; margin-bottom:12px;">
+                    {% if payout.breakdown %}
+                    {% for entry in payout.breakdown %}
+                    <p style="font-weight:bold; margin:4px 0;">{{ entry.level }} rätt: {{ entry.rows }} rad(er) x {{ entry.per_row }} kr = {{ entry.subtotal }} kr</p>
+                    {% endfor %}
+                    <p>Total utdelning: <b>{{ payout.total_payout }} kr</b></p>
+                    {% else %}
+                    <p>Ingen utdelning denna gång.</p>
+                    {% endif %}
+                    <p>Netto (utdelning minus insats): <b>{{ payout.net }} kr</b></p>
+                </div>
+                {% endif %}
+                {% if comparison %}
+                <div style="border:1px solid #000; border-radius:10px; padding:14px; margin-bottom:12px;">
+                    <b>Jämförelse mot {{ comparison.sibling_label }}</b>
+                    <p>{{ comparison.this_label }}: <b>{{ comparison.this_net }} kr</b></p>
+                    <p>{{ comparison.sibling_label }}: <b>{{ comparison.sibling_net }} kr</b></p>
+                    <p>
+                        Skillnad:
+                        <b>{{ '+' if comparison.diff >= 0 else '' }}{{ comparison.diff }} kr</b>
+                        {{ 'till fordel for ' + comparison.this_label if comparison.diff > 0 else 'till fordel for ' + comparison.sibling_label if comparison.diff < 0 else '(lika)' }}
+                    </p>
+                </div>
+                {% endif %}
+                {% for leg in legs %}
+                <div style="border:1px solid #000; border-radius:10px; padding:14px; margin-bottom:12px;">
+                    <b>V{{ leg.race_number }}</b>
+                    {% if xpress.is_xpress %}<div style="color:#444; font-size:0.85rem;">{{ leg.track }}</div>{% endif %}
+                    <div style="color:#000; font-size:14px; margin:4px 0;">Kaosvärde: {{ "%.1f"|format(leg.kaosvarde or 0) }}</div>
+                    {% for h in leg.horses if h.chosen %}{{ h.number }}. {{ h.name }}{% if not loop.last %}, {% endif %}{% endfor %}
+                    {% set report = leg_reports.get(leg.race_number) %}
+                    {% if report %}
+                        {% if report.status == "ej avgjort" %}
+                        <div style="color:#555; margin-top:6px;">Annu ej avgjort</div>
+                        {% elif report.hit %}
+                        <div style="color:#000; font-weight:bold; margin-top:6px;">TRAFF - vinnare: {{ report.winner_number }}. {{ report.winner_name }}</div>
+                        {% else %}
+                        <div style="color:#555; margin-top:6px;">Miss - vinnare: {{ report.winner_number }}. {{ report.winner_name }}</div>
+                        {% endif %}
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+        <script>
+            function shareCoupon() {
+                var shareText = {{ (prediction.spel ~ ' - ' ~ prediction.track ~ ' - ' ~ prediction.date) | tojson }};
+                if (navigator.share) {
+                    navigator.share({
+                        title: shareText,
+                        text: shareText,
+                        url: window.location.href
+                    }).catch(function() {});
+                } else {
+                    alert('Delning stods inte av den har webblasaren.');
+                }
+            }
+
+            function saveAsImage() {
+                var el = document.getElementById('kupong-export');
+                var filename = {{ (prediction.spel ~ '-' ~ prediction.date ~ '.png') | tojson }};
+
+                html2canvas(el, {backgroundColor: '#ffffff', scale: 2}).then(function(canvas) {
+                    canvas.toBlob(function(blob) {
+                        var file = new File([blob], filename, {type: 'image/png'});
+
+                        if (navigator.canShare && navigator.canShare({files: [file]})) {
+                            navigator.share({files: [file], title: filename}).catch(function() {});
+                        } else {
+                            var url = URL.createObjectURL(blob);
+                            var a = document.createElement('a');
+                            a.href = url;
+                            a.download = filename;
+                            document.body.appendChild(a);
+                            a.click();
+                            document.body.removeChild(a);
+                            URL.revokeObjectURL(url);
+                        }
+                    }, 'image/png');
+                }).catch(function() {
+                    alert('Kunde inte generera bilden.');
+                });
+            }
+        </script>
     """, prediction=prediction, legs=legs, outcome=outcome, leg_reports=leg_reports,
         fully_evaluated=_is_fully_evaluated(outcome), payout=prediction.get("payout"),
         prediction_id=prediction_id, strategy_labels=strategy_labels,
+        saved_time=saved_time, weather_display=weather_display, xpress=xpress,
         sibling=sibling, comparison=comparison, history=prediction.get("evaluation_history"))
 
 
@@ -805,6 +1250,21 @@ def strategier():
 
         <a class="footer-link" href="/">Hem</a>
     """, rows=rows, pairs=pairs)
+
+
+#
+# Startar automatisk pafyllning av historikdatabasen vid uppstart
+# (om tillrackligt lange gatt sedan senaste lyckade genomgangen).
+# WERKZEUG_RUN_MAIN-kollen forhindrar att detta trigglas dubbelt
+# nar Flasks debug-omstartare (reloader) startar processen: env-
+# variabeln ar osatt vid det forsta genomlopet (innan reloadern
+# startat om processen at sig sjalv), och satt till "true" bara i
+# den faktiska arbetsprocessen dar servern verkligen kor - sa
+# denna kontroll racker ensam, utan att behova las app.debug (som
+# annu inte blivit True vid den har punkten i korningen).
+#
+if os.environ.get("WERKZEUG_RUN_MAIN") == "true":
+    _maybe_start_automatic_backfill()
 
 
 if __name__ == "__main__":

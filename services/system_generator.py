@@ -1,3 +1,5 @@
+import math
+
 from config.bet_prices import ROW_PRICES, DEFAULT_ROW_PRICE
 
 
@@ -12,33 +14,63 @@ class SystemGenerator:
     # spelets typ (V85, V86, V5 osv), och motsvarar ATG:s
     # officiella priser.
     #
+    # Loppen sorteras efter kaosvärde (stabilast först) sa att
+    # spik/las alltid hamnar pa de sakraste loppen - det ar dar
+    # kombinatoriken vinner mest (en spik/las kostar bara x1 i
+    # radantalet, medan ett brett lopp multiplicerar radantalet
+    # rakt av). Ovriga lopps garderingsbredd skalar sedan med
+    # loppets EGNA kaosvarde - jamna lopp far fardre platser,
+    # kaotiska lopp far fler. Detta ar HELT ofrikopplat fran
+    # risknivan (se nedan) och budgeten - kaosvardet ensamt
+    # avgor totalbredden per lopp.
+    #
     # Tva garderingsprinciper stods, valbara via
     # coverage_strategy:
     #
-    #   "continuous" (standard) - garderingen for ovriga lopp
-    #   (utanfor spikar/las) skalar kontinuerligt med loppets
-    #   kaosvarde (0-100), mellan ett min- och maxantal hastar
-    #   per risknivå.
+    #   "continuous" (standard) - bredden for ovriga lopp
+    #   skalar kontinuerligt med loppets kaosvarde (0-100),
+    #   mellan ett min- och maxantal hastar.
     #
     #   "legacy" - den ursprungliga principen: en fast
-    #   garderingsniva per risknivå, plus en binar bonus (+1
-    #   hast) om kaosvardet overstiger 60.
+    #   garderingsniva, plus en binar bonus (+1 hast) om
+    #   kaosvardet overstiger 60.
     #
     # Bada finns kvar sa att de kan genereras parallellt och
     # jamforas mot varandra over tid.
     #
+    # Risknivan paverkar INTE totalbredden (och darmed inte
+    # kostnaden) - det ar budgeten och kaosvardet som avgor hur
+    # manga hastar som far plats. Risknivan avgor istallet HUR
+    # den redan bestamda bredden fordelas: en andel av platserna
+    # (se RISK_FAVORITE_RATIO) garanteras ga till genuina
+    # favoritkandidater (lagst odds, med Total Score som
+    # avgorande vid jamna odds - se _select_with_favorite_floor),
+    # resten fylls av Total Score-rankning bland ovriga hastar -
+    # dar analysens formaga att hitta icke-sjalvklara skrallar
+    # slar igenom. Ju hogre risk, desto storre andel av platserna
+    # lamnas oppna for den analysstyrda delen - och eftersom det
+    # ar en ANDEL av en redan varierande bredd (inte ett fast
+    # antal), vaxer utrymmet for skrallar naturligt med systemets
+    # storlek utan nagon hardkodad siffra.
+    #
 
-    RISK_COVERAGE_RANGE = {
-        "Låg": (2, 4),
-        "Mellan": (2, 5),
-        "Hög": (3, 7),
+    BASE_COVERAGE_RANGE = (2, 5)
+    BASE_COVERAGE_LEGACY = 3
+
+    RISK_FAVORITE_RATIO = {
+        "Låg": 0.7,
+        "Mellan": 0.5,
+        "Hög": 0.3,
     }
 
-    RISK_COVERAGE_LEGACY = {
-        "Låg": 2,
-        "Mellan": 3,
-        "Hög": 5,
-    }
+    #
+    # Hur stor oddsmarginal fran faltets basta odds som raknas
+    # som en "genuin favoritkandidat". 1.4 = odds upp till 40%
+    # hogre an favoritens far vara med och tavla om favorit-
+    # platserna via Total Score. T.ex. med basta odds 1.72 racknas
+    # allt upp till 2.41 som en genuin kandidat.
+    #
+    FAVORITE_ODDS_MARGIN = 1.4
 
     def generate(self, races, max_cost, risk, spikes, locks, game_type=None,
                  coverage_strategy="continuous"):
@@ -55,7 +87,6 @@ class SystemGenerator:
         leg_selections = []
 
         for index, race in enumerate(sorted_races):
-
             ranked_horses = sorted(
                 race.horses,
                 key=lambda h: h.get_metric("total_score"),
@@ -76,11 +107,11 @@ class SystemGenerator:
                 kaosvarde = getattr(race, "kaosvarde", 0)
 
                 if coverage_strategy == "legacy":
-                    coverage = self._coverage_legacy(risk, kaosvarde)
+                    coverage = self._coverage_legacy(kaosvarde)
                 else:
-                    coverage = self._coverage_continuous(risk, kaosvarde)
+                    coverage = self._coverage_continuous(kaosvarde)
 
-                chosen = ranked_horses[:coverage]
+                chosen = self._select_with_favorite_floor(race.horses, coverage, risk)
 
             leg_selections.append({
                 "race": race,
@@ -103,23 +134,77 @@ class SystemGenerator:
 
         return leg_selections, total_cost
 
-    def _coverage_continuous(self, risk, kaosvarde):
-        min_coverage, max_coverage = self.RISK_COVERAGE_RANGE.get(risk, (2, 5))
-
+    def _coverage_continuous(self, kaosvarde):
+        min_coverage, max_coverage = self.BASE_COVERAGE_RANGE
         kaos = kaosvarde or 0
         kaos = max(0, min(kaos, 100))
-
         scaled = min_coverage + (max_coverage - min_coverage) * (kaos / 100)
-
         return round(scaled)
 
-    def _coverage_legacy(self, risk, kaosvarde):
-        coverage = self.RISK_COVERAGE_LEGACY.get(risk, 3)
-
+    def _coverage_legacy(self, kaosvarde):
+        coverage = self.BASE_COVERAGE_LEGACY
         if (kaosvarde or 0) > 60:
             coverage += 1
-
         return coverage
+
+    @classmethod
+    def _select_with_favorite_floor(cls, horses, coverage, risk):
+        if coverage <= 0 or not horses:
+            return []
+
+        ratio = cls.RISK_FAVORITE_RATIO.get(risk, 0.5)
+        favorite_slots = max(1, min(coverage, round(coverage * ratio)))
+
+        ranked_by_score = sorted(
+            horses, key=lambda h: h.get_metric("total_score"), reverse=True
+        )
+
+        with_odds = sorted(
+            (h for h in horses if h.odds is not None), key=lambda h: h.odds
+        )
+        without_odds = [h for h in horses if h.odds is None]
+
+        if with_odds:
+            best_odds = with_odds[0].odds
+            margin = best_odds * cls.FAVORITE_ODDS_MARGIN
+            contenders = [h for h in with_odds if h.odds <= margin]
+            rest_by_odds = [h for h in with_odds if h.odds > margin]
+        else:
+            contenders, rest_by_odds = [], []
+
+        contender_numbers = {h.number for h in contenders}
+
+        #
+        # Bland de genuina favoritkandidaterna avgor Total Score
+        # rangordningen - inte den rena oddssiffran.
+        #
+        favorites = [
+            h for h in ranked_by_score if h.number in contender_numbers
+        ][:favorite_slots]
+
+        #
+        # Rackte inte de genuina kandidaterna till, fylls resten
+        # pa i strikt oddsordning - dar finns ingen verklig
+        # konkurrens att lata Total Score avgora.
+        #
+        if len(favorites) < favorite_slots:
+            needed = favorite_slots - len(favorites)
+            favorites = favorites + rest_by_odds[:needed]
+        if len(favorites) < favorite_slots:
+            needed = favorite_slots - len(favorites)
+            favorites = favorites + without_odds[:needed]
+
+        favorite_numbers = {h.number for h in favorites}
+
+        chosen = list(favorites)
+        for horse in ranked_by_score:
+            if len(chosen) >= coverage:
+                break
+            if horse.number in favorite_numbers:
+                continue
+            chosen.append(horse)
+
+        return chosen
 
     @staticmethod
     def _calculate_cost(leg_selections, row_price):
@@ -134,7 +219,6 @@ class SystemGenerator:
         for index, leg in enumerate(leg_selections):
             if index < spikes + locks:
                 continue
-
             if len(leg["horses"]) > 1:
                 return True
         return False
@@ -167,11 +251,6 @@ class SystemGenerator:
         print("=" * 60)
         print(f"Radpris: {row_price} kr")
 
-        #
-        # Sorteras efter loppnummer bara for utskriften -
-        # sjalva tilldelningen av spikar/las ovan bygger
-        # fortfarande pa kaosvarde, inte loppordning.
-        #
         for leg in sorted(
             leg_selections, key=lambda leg: leg["race"].race_number
         ):

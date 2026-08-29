@@ -4,6 +4,7 @@ from datetime import datetime, timezone
 
 from services.atg_client import ATGClient
 from parsers.result_parser import ResultParser
+from services.db import get_connection, init_db, insert_row, DB_PATH, OBSERVATION_COLUMNS
 
 
 class LearningEngine:
@@ -11,10 +12,11 @@ class LearningEngine:
     # Jämför ett tidigare sparat systemförslag
     # (från PredictionLogger) mot det faktiska
     # lopputfallet, rapporterar traffsakerhet, och skriver
-    # en detaljerad observationspost per häst till en
-    # växande historikfil (data/history/observations.jsonl).
+    # en detaljerad observationspost per häst till den
+    # vaxande historiktabellen "observations" i SQLite
+    # (data/history/chaosinsight.db).
     #
-    # Historikfilen är raw-material för framtida
+    # Historikdatan ar raw-material for framtida
     # mönsteranalys - t.ex. om en viss kusk eller häst
     # tenderar att over- eller undervarderas av crowden.
     # Sjalva mönsteranalysen byggs som ett separat, senare
@@ -36,11 +38,11 @@ class LearningEngine:
     #
 
     PREDICTIONS_DIR = "data/races"
-    HISTORY_PATH = "data/history/observations.jsonl"
 
     def __init__(self):
         self.client = ATGClient()
         self.result_parser = ResultParser()
+        init_db()
 
     def evaluate(self, game_id):
         path = os.path.join(self.PREDICTIONS_DIR, f"{game_id}.json")
@@ -297,69 +299,78 @@ class LearningEngine:
         }
 
     def _log_observations(self, prediction, leg, results):
-        os.makedirs(os.path.dirname(self.HISTORY_PATH), exist_ok=True)
-
         results_by_number = {r["number"]: r for r in results}
 
         logged_at = datetime.now(timezone.utc).isoformat()
 
-        with open(self.HISTORY_PATH, "a", encoding="utf-8") as f:
-            for horse in leg["horses"]:
-                result = results_by_number.get(horse["number"], {})
+        conn = get_connection(DB_PATH)
 
-                observation = {
-                    "logged_at": logged_at,
-                    "game_id": prediction["game_id"],
-                    "strategy": prediction.get("strategy"),
-                    "race_id": leg.get("race_id"),
-                    "date": prediction["date"],
-                    "track": leg["track"],
-                    "distance": leg.get("distance"),
-                    "start_method": leg.get("start_method"),
-                    "track_condition": leg.get("track_condition"),
-                    "kaosvarde": leg.get("kaosvarde"),
-                    "weather": prediction.get("weather"),
+        for horse in leg["horses"]:
+            result = results_by_number.get(horse["number"], {})
 
-                    "horse_number": horse["number"],
-                    "horse_name": horse["name"],
-                    "driver": horse.get("driver"),
-                    "trainer": horse.get("trainer"),
-                    "start_position": horse.get("start_position"),
-                    "odds": horse.get("odds"),
-                    "bet_percentage": horse.get("bet_percentage"),
-                    "shod_front": horse.get("shod_front"),
-                    "shod_back": horse.get("shod_back"),
-                    "shoe_changed": horse.get("shoe_changed"),
-                    "sulky_changed": horse.get("sulky_changed"),
-                    "cart_type": horse.get("cart_type"),
-                    "career_earnings": horse.get("career_earnings"),
-                    "driver_win_pct": horse.get("driver_win_pct"),
-                    "trainer_win_pct": horse.get("trainer_win_pct"),
-                    "horse_win_pct": horse.get("horse_win_pct"),
+            observation = {
+                "logged_at": logged_at,
+                "game_id": prediction["game_id"],
+                "strategy": prediction.get("strategy"),
+                "race_id": leg.get("race_id"),
+                "date": prediction["date"],
+                "track": leg["track"],
+                "distance": leg.get("distance"),
+                "start_method": leg.get("start_method"),
+                "track_condition": leg.get("track_condition"),
+                "kaosvarde": leg.get("kaosvarde"),
+                "weather": prediction.get("weather"),
 
-                    "predicted_total_score": horse.get("total_score"),
-                    "predicted_crowd_index": horse.get("crowd_index"),
-                    "predicted_chaos_index": horse.get("chaos_index"),
-                    "predicted_expert_index": horse.get("expert_index"),
-                    "chosen_by_system": horse.get("chosen"),
+                "horse_number": horse["number"],
+                "horse_name": horse["name"],
+                "driver": horse.get("driver"),
+                "trainer": horse.get("trainer"),
+                "start_position": horse.get("start_position"),
+                "odds": horse.get("odds"),
+                "bet_percentage": horse.get("bet_percentage"),
+                "shod_front": horse.get("shod_front"),
+                "shod_back": horse.get("shod_back"),
+                "shoe_changed": horse.get("shoe_changed"),
+                "sulky_changed": horse.get("sulky_changed"),
+                "cart_type": horse.get("cart_type"),
+                "career_earnings": horse.get("career_earnings"),
+                "driver_win_pct": horse.get("driver_win_pct"),
+                "trainer_win_pct": horse.get("trainer_win_pct"),
+                "horse_win_pct": horse.get("horse_win_pct"),
 
-                    "actual_finish_order": result.get("finish_order"),
-                    "actual_place": result.get("place"),
-                    "actual_final_odds": result.get("final_odds"),
-                    "actual_scratched": result.get("scratched"),
-                    "actual_galloped": result.get("galloped"),
-                    "actual_disqualified": result.get("disqualified"),
-                    "actual_prize_money": result.get("prize_money"),
-                    "actual_km_time": result.get("km_time"),
-                    "actual_km_time_status_code": result.get("km_time_status_code"),
-                }
+                "predicted_total_score": horse.get("total_score"),
+                "predicted_crowd_index": horse.get("crowd_index"),
+                "predicted_chaos_index": horse.get("chaos_index"),
+                "predicted_expert_index": horse.get("expert_index"),
+                "chosen_by_system": horse.get("chosen"),
 
-                f.write(json.dumps(observation, ensure_ascii=False))
-                f.write("\n")
+                "actual_finish_order": result.get("finish_order"),
+                "actual_place": result.get("place"),
+                "actual_final_odds": result.get("final_odds"),
+                "actual_scratched": result.get("scratched"),
+                "actual_galloped": result.get("galloped"),
+                "actual_disqualified": result.get("disqualified"),
+                "actual_prize_money": result.get("prize_money"),
+                "actual_km_time": result.get("km_time"),
+                "actual_km_time_status_code": result.get("km_time_status_code"),
+            }
+
+            #
+            # or_ignore=True skyddar bara mot en ren omkorning av
+            # exakt samma logged_at/game_id/race_id/horse_number -
+            # om samma lopp utvarderas pa nytt senare (t.ex. via
+            # "Tvinga omvardering") far det en ny logged_at-
+            # tidsstampel och loggas som en ny, egen observation,
+            # precis som i den tidigare JSONL-baserade versionen.
+            #
+            insert_row(conn, "observations", observation, OBSERVATION_COLUMNS, or_ignore=True)
+
+        conn.commit()
+        conn.close()
 
         print(
             f"[Learning Engine] Loggade {len(leg['horses'])} observationer "
-            f"for V{leg['race_number']} till {self.HISTORY_PATH}"
+            f"for V{leg['race_number']} till {DB_PATH}"
         )
 
     @staticmethod

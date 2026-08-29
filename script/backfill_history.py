@@ -1,20 +1,25 @@
 """
-Engangsskript for att fylla pa data/history/ med historisk statistik
-for 2026, byggt ovanpa den redan befintliga, legitima ATGClient som
-resten av ChaosInsight anvander.
+Skript for att fylla pa den historiska databasen med statistik,
+byggt ovanpa den redan befintliga, legitima ATGClient som resten
+av ChaosInsight anvander.
 
-Kor fran projektroten:
-    python scripts/backfill_history.py
+Kor fran projektroten (engangs/manuellt):
+    python script/backfill_history.py
 
 Kan avbrytas nar som helst (t.ex. med CTRL+C) och kors om senare -
 redan hamtade game_id hoppas over automatiskt via progressfilen.
+
+Kärnlogiken (run_backfill) importeras aven av web_app/app.py, som
+kor den automatiskt i bakgrunden vid uppstart (om det gatt
+tillrackligt lange sedan senaste lyckade korningen) samt via en
+"Uppdatera"-knapp i granssnittet.
 """
 
 import sys
 import os
 import json
 import time
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
@@ -22,12 +27,11 @@ from services.atg_client import ATGClient
 from parsers.race_parser import RaceParser
 from parsers.result_parser import ResultParser
 from config.bet_types import SYSTEM_BET_TYPES
+from services.db import get_connection, init_db, insert_row, DB_PATH, BACKFILL_COLUMNS
 
 
 START_DATE = "2026-01-01"
-END_DATE = datetime.now().strftime("%Y-%m-%d")
 
-OUTPUT_PATH = "data/history/backfill_starts.jsonl"
 PROGRESS_PATH = "data/history/backfill_progress.json"
 
 #
@@ -36,19 +40,50 @@ PROGRESS_PATH = "data/history/backfill_progress.json"
 #
 REQUEST_DELAY_SECONDS = 1.5
 
+#
+# Hur lange sedan senaste lyckade automatiska korningen som ska
+# ha gatt innan en ny automatisk korning tillats (vid appstart).
+# Paverkar INTE den manuella "Uppdatera"-knappen eller CLI-korning,
+# som alltid kor direkt oavsett den har grarnsen.
+#
+MIN_HOURS_BETWEEN_AUTO_RUNS = 12
+
 
 def load_progress():
     if not os.path.exists(PROGRESS_PATH):
-        return {"processed_game_ids": [], "processed_dates": []}
+        return {"processed_game_ids": [], "processed_dates": [], "last_run_completed_at": None}
 
     with open(PROGRESS_PATH, encoding="utf-8") as f:
-        return json.load(f)
+        progress = json.load(f)
+
+    progress.setdefault("processed_game_ids", [])
+    progress.setdefault("processed_dates", [])
+    progress.setdefault("last_run_completed_at", None)
+    return progress
 
 
 def save_progress(progress):
     os.makedirs(os.path.dirname(PROGRESS_PATH), exist_ok=True)
     with open(PROGRESS_PATH, "w", encoding="utf-8") as f:
         json.dump(progress, f, ensure_ascii=False, indent=2)
+
+
+def should_run_backfill(progress, min_hours=MIN_HOURS_BETWEEN_AUTO_RUNS):
+    #
+    # Anvands bara av den automatiska uppstarts-triggern - avgor
+    # om tillrackligt lang tid gatt sedan senaste lyckade
+    # fullstandiga genomgang.
+    #
+    last_run = progress.get("last_run_completed_at")
+    if not last_run:
+        return True
+
+    try:
+        last_run_dt = datetime.fromisoformat(last_run)
+    except ValueError:
+        return True
+
+    return datetime.now(timezone.utc) - last_run_dt >= timedelta(hours=min_hours)
 
 
 def daterange(start_date_str, end_date_str):
@@ -62,11 +97,6 @@ def daterange(start_date_str, end_date_str):
 
 
 def collect_game_ids_for_date(client, date_str):
-    #
-    # Anvander samma kalender-uppslag som webbappen redan gor via
-    # RaceCollector, men bara for att lista game_id - vi hamtar
-    # sjalva speldatan separat per game_id nedan.
-    #
     calendar = client.get_calendar(date_str)
 
     game_ids = []
@@ -83,13 +113,6 @@ def collect_game_ids_for_date(client, date_str):
 
 
 def extract_starts(game_id, raw_game_data):
-    #
-    # Ateranvander samma parsers som resten av plattformen for att
-    # plocka ut lopp-, hast- och resultatdata - men lagger dessutom
-    # till det faktiska resultatet direkt fran samma svar (races[i]
-    # innehaller redan "status" och "starts" med resultat inbakat,
-    # sa vi slipper ett extra anrop per lopp).
-    #
     race_parser = RaceParser()
     result_parser = ResultParser()
 
@@ -101,7 +124,7 @@ def extract_starts(game_id, raw_game_data):
     rows = []
 
     for race in races:
-        raw_race = raw_races_by_number.get(race.race_number, {})
+        raw_race = raw_races_by_number.get(race.local_race_number, {})
         results = result_parser.parse(raw_race) or []
         results_by_number = {r["number"]: r for r in results}
 
@@ -150,88 +173,111 @@ def extract_starts(game_id, raw_game_data):
     return rows
 
 
-def main():
+def run_backfill(end_date=None, log=print):
+    #
+    # Kärnlogiken, atkomlig bade fran CLI (__main__ nedan) och
+    # fran web_app/app.py (bakgrundstrad vid uppstart, samt
+    # "Uppdatera"-knappen). log ar en injicerbar utskriftsfunktion
+    # sa att bakgrundskorningar kan skicka meddelanden nagon
+    # annanstans an stdout om det behovs senare - standard skriver
+    # bara till stdout/serverloggen, precis som tidigare.
+    #
+    end_date = end_date or datetime.now().strftime("%Y-%m-%d")
+
     client = ATGClient()
     progress = load_progress()
 
     processed_game_ids = set(progress["processed_game_ids"])
     processed_dates = set(progress["processed_dates"])
 
-    os.makedirs(os.path.dirname(OUTPUT_PATH), exist_ok=True)
+    init_db()
+    conn = get_connection()
 
     total_rows_written = 0
     total_games_processed = 0
 
-    with open(OUTPUT_PATH, "a", encoding="utf-8") as out_file:
+    for date_str in daterange(START_DATE, end_date):
 
-        for date_str in daterange(START_DATE, END_DATE):
+        if date_str in processed_dates:
+            continue
 
-            if date_str in processed_dates:
-                print(f"[Backfill] {date_str} redan klar, hoppar over.")
-                continue
+        try:
+            game_ids = collect_game_ids_for_date(client, date_str)
+        except Exception as exc:
+            log(f"[Backfill] Kunde inte hamta kalender for {date_str}: {exc}")
+            continue
 
-            try:
-                game_ids = collect_game_ids_for_date(client, date_str)
-            except Exception as exc:
-                print(f"[Backfill] Kunde inte hamta kalender for {date_str}: {exc}")
-                continue
-
-            if not game_ids:
-                print(f"[Backfill] {date_str}: inga poolspel hittades.")
-                processed_dates.add(date_str)
-                progress["processed_dates"] = sorted(processed_dates)
-                save_progress(progress)
-                continue
-
-            print(f"[Backfill] {date_str}: {len(game_ids)} spel hittade.")
-
-            for game_id in game_ids:
-                if game_id in processed_game_ids:
-                    continue
-
-                try:
-                    raw_game_data = client.get_game(game_id)
-                except Exception as exc:
-                    print(f"[Backfill] Fel vid hamtning av {game_id}: {exc}")
-                    time.sleep(REQUEST_DELAY_SECONDS)
-                    continue
-
-                if not raw_game_data:
-                    time.sleep(REQUEST_DELAY_SECONDS)
-                    continue
-
-                rows = extract_starts(game_id, raw_game_data)
-
-                for row in rows:
-                    out_file.write(json.dumps(row, ensure_ascii=False))
-                    out_file.write("\n")
-
-                out_file.flush()
-
-                total_rows_written += len(rows)
-                total_games_processed += 1
-
-                processed_game_ids.add(game_id)
-                progress["processed_game_ids"] = sorted(processed_game_ids)
-                save_progress(progress)
-
-                print(
-                    f"[Backfill]   {game_id}: {len(rows)} starter sparade "
-                    f"(totalt {total_rows_written} rader, "
-                    f"{total_games_processed} spel klara)"
-                )
-
-                time.sleep(REQUEST_DELAY_SECONDS)
-
+        if not game_ids:
             processed_dates.add(date_str)
             progress["processed_dates"] = sorted(processed_dates)
             save_progress(progress)
+            continue
 
-    print()
-    print("=" * 60)
-    print(f"Klart. {total_games_processed} spel, {total_rows_written} rader sparade till {OUTPUT_PATH}")
-    print("=" * 60)
+        log(f"[Backfill] {date_str}: {len(game_ids)} spel hittade.")
+
+        for game_id in game_ids:
+            if game_id in processed_game_ids:
+                continue
+
+            try:
+                raw_game_data = client.get_game(game_id)
+            except Exception as exc:
+                log(f"[Backfill] Fel vid hamtning av {game_id}: {exc}")
+                time.sleep(REQUEST_DELAY_SECONDS)
+                continue
+
+            if not raw_game_data:
+                time.sleep(REQUEST_DELAY_SECONDS)
+                continue
+
+            rows = extract_starts(game_id, raw_game_data)
+
+            for row in rows:
+                insert_row(conn, "backfill_starts", row, BACKFILL_COLUMNS, or_ignore=True)
+
+            conn.commit()
+
+            total_rows_written += len(rows)
+            total_games_processed += 1
+
+            processed_game_ids.add(game_id)
+            progress["processed_game_ids"] = sorted(processed_game_ids)
+            save_progress(progress)
+
+            log(
+                f"[Backfill]   {game_id}: {len(rows)} starter sparade "
+                f"(totalt {total_rows_written} rader, "
+                f"{total_games_processed} spel klara)"
+            )
+
+            time.sleep(REQUEST_DELAY_SECONDS)
+
+        processed_dates.add(date_str)
+        progress["processed_dates"] = sorted(processed_dates)
+        save_progress(progress)
+
+    conn.close()
+
+    #
+    # Bara en fullstandig genomgang utan avbrott raknas som en
+    # "lyckad korning" och flyttar fram tidsstampeln som styr nasta
+    # automatiska forsok.
+    #
+    progress["last_run_completed_at"] = datetime.now(timezone.utc).isoformat()
+    save_progress(progress)
+
+    summary = {
+        "games_processed": total_games_processed,
+        "rows_written": total_rows_written,
+    }
+
+    log(
+        f"[Backfill] Klart. {total_games_processed} spel, "
+        f"{total_rows_written} rader sparade till {DB_PATH}"
+    )
+
+    return summary
 
 
 if __name__ == "__main__":
-    main()
+    run_backfill()

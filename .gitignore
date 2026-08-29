@@ -17,3 +17,6 @@ logs/*.log
 Thumbs.db
 data/history/*.jsonl
 
+data/history/chaosinsight.db
+data/history/chaosinsight.db-shm
+data/history/chaosinsight.db-wal

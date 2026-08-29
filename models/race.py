@@ -1,6 +1,5 @@
 from models.horse import Horse
 
-
 #
 # ATG:s kanda bantillstand-koder. "light" ar bekraftat fran
 # rådata; ovriga (medium/heavy/winter-varianter) ar rimliga
@@ -28,6 +27,7 @@ class Race:
         start_time: str = None,
         race_id: str = None,
         track_condition: str = None,
+        local_race_number: int = None,
     ):
         self.track = track
         self.date = date
@@ -44,6 +44,14 @@ class Race:
         #
         self.track_condition = track_condition
 
+        #
+        # ATG:s egna lokala loppnummer for banan (t.ex. "det
+        # sjunde loppet pa Åby idag"), skilt fran race_number
+        # (den riktiga V-avdelningen). Sparas bara for referens/
+        # felsokning - anvands inte som nyckel nagonstans.
+        #
+        self.local_race_number = local_race_number
+
     @property
     def track_condition_label(self):
         if not self.track_condition:
@@ -59,4 +67,3 @@ class Race:
             f"V{self.race_number}, "
             f"{len(self.horses)} hästar)"
         )
-
