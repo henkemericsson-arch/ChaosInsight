@@ -13,6 +13,10 @@ Kärnlogiken (run_backfill) importeras aven av web_app/app.py, som
 kor den automatiskt i bakgrunden vid uppstart (om det gatt
 tillrackligt lange sedan senaste lyckade korningen) samt via en
 "Uppdatera"-knapp i granssnittet.
+
+Skriver via foundation.database_manager.DatabaseManager - kanner
+inte langre till databasschemat direkt, enligt Bibelns
+grundprincip 3.
 """
 
 import sys
@@ -27,10 +31,11 @@ from services.atg_client import ATGClient
 from parsers.race_parser import RaceParser
 from parsers.result_parser import ResultParser
 from config.bet_types import SYSTEM_BET_TYPES
-from services.db import get_connection, init_db, insert_row, DB_PATH, BACKFILL_COLUMNS
+from foundation.database_manager import DatabaseManager
+from services.db import DB_PATH
 
 
-START_DATE = "2026-01-01"
+START_DATE = "2021-10-01"
 
 PROGRESS_PATH = "data/history/backfill_progress.json"
 
@@ -69,11 +74,6 @@ def save_progress(progress):
 
 
 def should_run_backfill(progress, min_hours=MIN_HOURS_BETWEEN_AUTO_RUNS):
-    #
-    # Anvands bara av den automatiska uppstarts-triggern - avgor
-    # om tillrackligt lang tid gatt sedan senaste lyckade
-    # fullstandiga genomgang.
-    #
     last_run = progress.get("last_run_completed_at")
     if not last_run:
         return True
@@ -174,14 +174,6 @@ def extract_starts(game_id, raw_game_data):
 
 
 def run_backfill(end_date=None, log=print):
-    #
-    # Kärnlogiken, atkomlig bade fran CLI (__main__ nedan) och
-    # fran web_app/app.py (bakgrundstrad vid uppstart, samt
-    # "Uppdatera"-knappen). log ar en injicerbar utskriftsfunktion
-    # sa att bakgrundskorningar kan skicka meddelanden nagon
-    # annanstans an stdout om det behovs senare - standard skriver
-    # bara till stdout/serverloggen, precis som tidigare.
-    #
     end_date = end_date or datetime.now().strftime("%Y-%m-%d")
 
     client = ATGClient()
@@ -190,8 +182,7 @@ def run_backfill(end_date=None, log=print):
     processed_game_ids = set(progress["processed_game_ids"])
     processed_dates = set(progress["processed_dates"])
 
-    init_db()
-    conn = get_connection()
+    db = DatabaseManager()
 
     total_rows_written = 0
     total_games_processed = 0
@@ -233,9 +224,9 @@ def run_backfill(end_date=None, log=print):
             rows = extract_starts(game_id, raw_game_data)
 
             for row in rows:
-                insert_row(conn, "backfill_starts", row, BACKFILL_COLUMNS, or_ignore=True)
+                db.insert_backfill_start(row, or_ignore=True)
 
-            conn.commit()
+            db.commit()
 
             total_rows_written += len(rows)
             total_games_processed += 1
@@ -256,7 +247,7 @@ def run_backfill(end_date=None, log=print):
         progress["processed_dates"] = sorted(processed_dates)
         save_progress(progress)
 
-    conn.close()
+    db.close()
 
     #
     # Bara en fullstandig genomgang utan avbrott raknas som en

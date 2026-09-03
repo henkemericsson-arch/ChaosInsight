@@ -4,16 +4,17 @@ import json
 
 #
 # Enda SQLite-filen for all historisk data (backfill + observationer
-# fran Learning Engine). Ersatter de tva JSONL-filerna
-# (backfill_starts.jsonl, observations.jsonl) som tidigare laddades
-# in i sin helhet i minnet vid varje analys.
+# fran Learning Engine + KAMT v2:s skuggade forutsagelser). Ersatter
+# de tva JSONL-filerna (backfill_starts.jsonl, observations.jsonl)
+# som tidigare laddades in i sin helhet i minnet vid varje analys.
 #
 DB_PATH = "data/history/chaosinsight.db"
 
 #
 # Kolumnordning - anvands av backfill_history.py,
-# learning_engine.py och migreringsskriptet for att bygga
-# INSERT-satser utan att behova upprepa listan pa flera stallen.
+# learning_engine.py, kamt_v2_forecast_logger.py och
+# migreringsskriptet for att bygga INSERT-satser utan att behova
+# upprepa listan pa flera stallen.
 #
 BACKFILL_COLUMNS = [
     "game_id", "date", "track", "track_condition", "distance",
@@ -40,6 +41,18 @@ OBSERVATION_COLUMNS = [
     "actual_final_odds", "actual_scratched", "actual_galloped",
     "actual_disqualified", "actual_prize_money", "actual_km_time",
     "actual_km_time_status_code",
+]
+
+#
+# KAMT v2 - skuggat/parallellt lage: RaceAnalyzer:s forutsagda
+# vinstsannolikhet per hast, loggat for framtida utvardering mot
+# faktiska utfall. Paverkar INGA riktiga systemval - se
+# kamt_v2_forecast_logger.py.
+#
+KAMT_V2_FORECAST_COLUMNS = [
+    "logged_at", "game_id", "race_number", "race_id", "date",
+    "track", "horse_number", "horse_name",
+    "predicted_win_probability", "n_simulations",
 ]
 
 SCHEMA = """
@@ -93,6 +106,19 @@ CREATE INDEX IF NOT EXISTS idx_obs_horse_name
     ON observations(horse_name);
 CREATE INDEX IF NOT EXISTS idx_obs_game_race
     ON observations(game_id, race_id);
+
+CREATE TABLE IF NOT EXISTS kamt_v2_forecasts (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    logged_at TEXT, game_id TEXT, race_number INTEGER, race_id TEXT,
+    date TEXT, track TEXT, horse_number INTEGER, horse_name TEXT,
+    predicted_win_probability REAL, n_simulations INTEGER,
+    UNIQUE(logged_at, game_id, race_number, horse_number)
+);
+
+CREATE INDEX IF NOT EXISTS idx_kamt_v2_game_race
+    ON kamt_v2_forecasts(game_id, race_number);
+CREATE INDEX IF NOT EXISTS idx_kamt_v2_horse_name
+    ON kamt_v2_forecasts(horse_name);
 """
 
 

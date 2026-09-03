@@ -19,6 +19,9 @@ OBS: bara backfill_starts-tabellen paverkas av denna bugg.
 observations-tabellen nyckla aldrig pa race_number (bara race_id,
 som alltid varit korrekt unikt per bana) och behover darfor inte
 rensas.
+
+Anvander foundation.database_manager.DatabaseManager - kanner inte
+langre till databasschemat direkt.
 """
 
 import sys
@@ -27,43 +30,10 @@ import json
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-from services.db import get_connection, DB_PATH
+from foundation.database_manager import DatabaseManager
+from services.db import DB_PATH
 
 PROGRESS_PATH = "data/history/backfill_progress.json"
-
-
-def find_corrupted_games(conn):
-    rows = conn.execute("""
-        SELECT game_id, date, GROUP_CONCAT(DISTINCT track) as tracks
-        FROM backfill_starts
-        GROUP BY game_id
-        HAVING COUNT(DISTINCT track) > 1
-        ORDER BY date
-    """).fetchall()
-
-    affected = []
-    for row in rows:
-        #
-        # Ett spel med flera banor ar bara faktiskt korrupt om
-        # race_number verkligen kolliderar mellan banorna - det
-        # ar den riktiga bugg-signaturen, inte bara "fler an en
-        # bana" i sig.
-        #
-        collisions = conn.execute("""
-            SELECT race_number FROM backfill_starts
-            WHERE game_id = ?
-            GROUP BY race_number
-            HAVING COUNT(DISTINCT track) > 1
-        """, (row["game_id"],)).fetchall()
-
-        if collisions:
-            affected.append({
-                "game_id": row["game_id"],
-                "date": row["date"],
-                "tracks": row["tracks"],
-            })
-
-    return affected
 
 
 def main():
@@ -71,12 +41,12 @@ def main():
         print(f"Ingen databas hittades pa {DB_PATH}.")
         return
 
-    conn = get_connection()
-    affected = find_corrupted_games(conn)
+    db = DatabaseManager()
+    affected = db.find_corrupted_xpress_games()
 
     if not affected:
         print("Inga spel med race_number-kollision hittades. Datan ser ren ut.")
-        conn.close()
+        db.close()
         return
 
     print(f"Hittade {len(affected)} spel med korrupt data (race_number-kollision mellan banor):\n")
@@ -96,17 +66,12 @@ def main():
     )
     if answer.strip().lower() != "ja":
         print("Avbrutet - ingenting andrat.")
-        conn.close()
+        db.close()
         return
 
-    placeholders = ",".join(["?"] * len(affected_game_ids))
-    cur = conn.execute(
-        f"DELETE FROM backfill_starts WHERE game_id IN ({placeholders})",
-        affected_game_ids,
-    )
-    deleted_rows = cur.rowcount
-    conn.commit()
-    conn.close()
+    deleted_rows = db.delete_backfill_rows_for_games(affected_game_ids)
+    db.commit()
+    db.close()
 
     print(f"\nRaderade {deleted_rows} rader fran backfill_starts.")
 

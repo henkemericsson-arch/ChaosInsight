@@ -4,7 +4,8 @@ from datetime import datetime, timezone
 
 from services.atg_client import ATGClient
 from parsers.result_parser import ResultParser
-from services.db import get_connection, init_db, insert_row, DB_PATH, OBSERVATION_COLUMNS
+from foundation.database_manager import DatabaseManager
+from services.db import DB_PATH
 
 
 class LearningEngine:
@@ -14,7 +15,8 @@ class LearningEngine:
     # lopputfallet, rapporterar traffsakerhet, och skriver
     # en detaljerad observationspost per häst till den
     # vaxande historiktabellen "observations" i SQLite
-    # (data/history/chaosinsight.db).
+    # (data/history/chaosinsight.db), via
+    # foundation.database_manager.DatabaseManager.
     #
     # Historikdatan ar raw-material for framtida
     # mönsteranalys - t.ex. om en viss kusk eller häst
@@ -42,7 +44,6 @@ class LearningEngine:
     def __init__(self):
         self.client = ATGClient()
         self.result_parser = ResultParser()
-        init_db()
 
     def evaluate(self, game_id):
         path = os.path.join(self.PREDICTIONS_DIR, f"{game_id}.json")
@@ -139,11 +140,25 @@ class LearningEngine:
 
         if winner is None:
             #
+            # ATG rapporterar ibland vinnaren via "place" istallet
+            # for (eller utover) "finishOrder" - upptackt nar ett
+            # lopp med en bekraftad vinnare (place=1 i ATG:s
+            # rådata) andå flaggades som "ej avgjort" har, eftersom
+            # finishOrder saknades for just den startande. Anvand
+            # place som fallback nar finish_order inte racker for
+            # att hitta en vinnare.
+            #
+            winner = next(
+                (r for r in results if r["place"] == 1), None
+            )
+
+        if winner is None:
+            #
             # ATG kan sätta loppets status till "results" innan
             # alla placeringar (t.ex. efter fotofinish) är
-            # fastställda. Utan en bekräftad vinnare är loppet i
-            # praktiken fortfarande oavgjort - räkna det inte
-            # som en miss.
+            # fastställda. Utan en bekräftad vinnare (varken via
+            # finish_order eller place) är loppet i praktiken
+            # fortfarande oavgjort - räkna det inte som en miss.
             #
             return {
                 "race_number": leg["race_number"],
@@ -303,7 +318,7 @@ class LearningEngine:
 
         logged_at = datetime.now(timezone.utc).isoformat()
 
-        conn = get_connection(DB_PATH)
+        db = DatabaseManager()
 
         for horse in leg["horses"]:
             result = results_by_number.get(horse["number"], {})
@@ -361,12 +376,12 @@ class LearningEngine:
             # om samma lopp utvarderas pa nytt senare (t.ex. via
             # "Tvinga omvardering") far det en ny logged_at-
             # tidsstampel och loggas som en ny, egen observation,
-            # precis som i den tidigare JSONL-baserade versionen.
+            # precis som tidigare.
             #
-            insert_row(conn, "observations", observation, OBSERVATION_COLUMNS, or_ignore=True)
+            db.insert_observation(observation, or_ignore=True)
 
-        conn.commit()
-        conn.close()
+        db.commit()
+        db.close()
 
         print(
             f"[Learning Engine] Loggade {len(leg['horses'])} observationer "

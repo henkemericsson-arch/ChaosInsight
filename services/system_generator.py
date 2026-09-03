@@ -21,8 +21,8 @@ class SystemGenerator:
     # rakt av). Ovriga lopps garderingsbredd skalar sedan med
     # loppets EGNA kaosvarde - jamna lopp far fardre platser,
     # kaotiska lopp far fler. Detta ar HELT ofrikopplat fran
-    # risknivan (se nedan) och budgeten - kaosvardet ensamt
-    # avgor totalbredden per lopp.
+    # risknivan och budgeten - kaosvardet ensamt avgor
+    # totalbredden per lopp.
     #
     # Tva garderingsprinciper stods, valbara via
     # coverage_strategy:
@@ -48,27 +48,23 @@ class SystemGenerator:
     # resten fylls av Total Score-rankning bland ovriga hastar -
     # dar analysens formaga att hitta icke-sjalvklara skrallar
     # slar igenom. Ju hogre risk, desto storre andel av platserna
-    # lamnas oppna for den analysstyrda delen - och eftersom det
-    # ar en ANDEL av en redan varierande bredd (inte ett fast
-    # antal), vaxer utrymmet for skrallar naturligt med systemets
-    # storlek utan nagon hardkodad siffra.
+    # lamnas oppna for den analysstyrda delen.
     #
 
     BASE_COVERAGE_RANGE = (2, 5)
     BASE_COVERAGE_LEGACY = 3
 
     RISK_FAVORITE_RATIO = {
-        "Låg": 0.7,
-        "Mellan": 0.5,
-        "Hög": 0.3,
+        "Låg": 0.5,
+        "Mellan": 0.3,
+        "Hög": 0.1,
     }
 
     #
     # Hur stor oddsmarginal fran faltets basta odds som raknas
     # som en "genuin favoritkandidat". 1.4 = odds upp till 40%
     # hogre an favoritens far vara med och tavla om favorit-
-    # platserna via Total Score. T.ex. med basta odds 1.72 racknas
-    # allt upp till 2.41 som en genuin kandidat.
+    # platserna via Total Score.
     #
     FAVORITE_ODDS_MARGIN = 1.4
 
@@ -94,14 +90,8 @@ class SystemGenerator:
             )
 
             if index < spikes:
-                #
-                # Spik: bara den högst rankade hästen.
-                #
                 chosen = ranked_horses[:1]
             elif index < spikes + locks:
-                #
-                # Lås: de två högst rankade hästarna.
-                #
                 chosen = ranked_horses[:2]
             else:
                 kaosvarde = getattr(race, "kaosvarde", 0)
@@ -127,6 +117,15 @@ class SystemGenerator:
         while total_cost > max_cost and self._can_reduce(leg_selections, spikes, locks):
             self._reduce_widest_leg(leg_selections, spikes, locks)
             total_cost = self._calculate_cost(leg_selections, row_price)
+
+        #
+        # Om det finns budget kvar efter kaosvarde-bredden,
+        # anvand den till att bredda garderingen ytterligare -
+        # annars kan stora delar av budgeten lamnas outnyttjad.
+        #
+        total_cost = self._widen_to_use_budget(
+            leg_selections, spikes, locks, max_cost, row_price, total_cost
+        )
 
         self._print_system(
             leg_selections, total_cost, max_cost, row_price, coverage_strategy
@@ -174,19 +173,10 @@ class SystemGenerator:
 
         contender_numbers = {h.number for h in contenders}
 
-        #
-        # Bland de genuina favoritkandidaterna avgor Total Score
-        # rangordningen - inte den rena oddssiffran.
-        #
         favorites = [
             h for h in ranked_by_score if h.number in contender_numbers
         ][:favorite_slots]
 
-        #
-        # Rackte inte de genuina kandidaterna till, fylls resten
-        # pa i strikt oddsordning - dar finns ingen verklig
-        # konkurrens att lata Total Score avgora.
-        #
         if len(favorites) < favorite_slots:
             needed = favorite_slots - len(favorites)
             favorites = favorites + rest_by_odds[:needed]
@@ -243,6 +233,70 @@ class SystemGenerator:
         )
 
         widest_leg["horses"].pop()
+
+    def _widen_to_use_budget(self, leg_selections, spikes, locks, max_cost, row_price, total_cost):
+        #
+        # Anvander eventuellt kvarvarande budgetutrymme (efter att
+        # kaosvarde-bredden och en ev. nedtrimning redan bestamts)
+        # till att bredda garderingen ytterligare - annars kan en
+        # generos budget lamnas till stor del outnyttjad om
+        # kaosvarde-bredden i sig ar mycket billigare an taket.
+        #
+        # Breddar en hast i taget, alltid i det lopp (utanfor
+        # spikar/las) med HOGST kaosvarde bland de som fortfarande
+        # har utrymme kvar i faltet - ett kaotiskt lopp har mest
+        # att vinna pa ytterligare gardering. Fortsatter tills
+        # nasta breddning skulle sprangda budgeten, eller inget
+        # lopp langre har plats kvar.
+        #
+        # Kostnaden raknas om fran grunden vid varje steg (istallet
+        # for inkrementellt) for att undvika flyttalsdrift over
+        # manga iterationer.
+        #
+        while True:
+            candidates = [
+                (index, leg)
+                for index, leg in enumerate(leg_selections)
+                if index >= spikes + locks
+                and len(leg["horses"]) < len(leg["race"].horses)
+            ]
+
+            if not candidates:
+                break
+
+            _, widest_kaos_leg = max(
+                candidates,
+                key=lambda pair: getattr(pair[1]["race"], "kaosvarde", 0),
+            )
+
+            ranked_horses = sorted(
+                widest_kaos_leg["race"].horses,
+                key=lambda h: h.get_metric("total_score"),
+                reverse=True,
+            )
+            chosen_numbers = {h.number for h in widest_kaos_leg["horses"]}
+            next_horse = next(
+                (h for h in ranked_horses if h.number not in chosen_numbers),
+                None,
+            )
+
+            if next_horse is None:
+                break
+
+            widest_kaos_leg["horses"].append(next_horse)
+            new_total_cost = self._calculate_cost(leg_selections, row_price)
+
+            if new_total_cost > max_cost:
+                #
+                # Denna breddning sprangde budgeten - backa den och
+                # avsluta.
+                #
+                widest_kaos_leg["horses"].pop()
+                break
+
+            total_cost = new_total_cost
+
+        return total_cost
 
     def _print_system(self, leg_selections, total_cost, max_cost, row_price, coverage_strategy):
         print()
