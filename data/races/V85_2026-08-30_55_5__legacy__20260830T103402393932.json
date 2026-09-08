@@ -2120,7 +2120,14 @@
           5,
           8
         ],
-        "hit": false
+        "hit": false,
+        "effective_chosen_numbers": [
+          2,
+          4,
+          5,
+          6
+        ],
+        "reserve_substitution_applied": true
       },
       {
         "race_number": 4,
@@ -2245,6 +2252,137 @@
               8
             ],
             "hit": false
+          },
+          {
+            "race_number": 4,
+            "status": "avgjort",
+            "winner_number": 6,
+            "winner_name": "Lanson",
+            "chosen_numbers": [
+              1,
+              2,
+              6,
+              9
+            ],
+            "hit": true
+          }
+        ]
+      },
+      "payout": {
+        "breakdown": [
+          {
+            "level": 6,
+            "rows": 4,
+            "per_row": 39.0,
+            "subtotal": 156.0
+          },
+          {
+            "level": 5,
+            "rows": 52,
+            "per_row": 6.0,
+            "subtotal": 312.0
+          }
+        ],
+        "total_payout": 468.0,
+        "net": -1068.0
+      }
+    },
+    {
+      "evaluated_at": "2026-09-06T20:25:09.596323+00:00",
+      "outcome": {
+        "evaluated_legs": 8,
+        "hits": 6,
+        "undecided_legs": 0,
+        "legs": [
+          {
+            "race_number": 2,
+            "status": "avgjort",
+            "winner_number": 5,
+            "winner_name": "Malthe S H",
+            "chosen_numbers": [
+              1
+            ],
+            "hit": false
+          },
+          {
+            "race_number": 3,
+            "status": "avgjort",
+            "winner_number": 3,
+            "winner_name": "A Fair Day",
+            "chosen_numbers": [
+              3,
+              4
+            ],
+            "hit": true
+          },
+          {
+            "race_number": 7,
+            "status": "avgjort",
+            "winner_number": 5,
+            "winner_name": "Lazy Dust",
+            "chosen_numbers": [
+              1,
+              5
+            ],
+            "hit": true
+          },
+          {
+            "race_number": 8,
+            "status": "avgjort",
+            "winner_number": 3,
+            "winner_name": "Karlo Molar",
+            "chosen_numbers": [
+              3,
+              4,
+              11
+            ],
+            "hit": true
+          },
+          {
+            "race_number": 5,
+            "status": "avgjort",
+            "winner_number": 3,
+            "winner_name": "Koogoo Gaagaa",
+            "chosen_numbers": [
+              3,
+              4,
+              5,
+              7
+            ],
+            "hit": true
+          },
+          {
+            "race_number": 1,
+            "status": "avgjort",
+            "winner_number": 5,
+            "winner_name": "Jomo Cash",
+            "chosen_numbers": [
+              2,
+              3,
+              5,
+              12
+            ],
+            "hit": true
+          },
+          {
+            "race_number": 6,
+            "status": "avgjort",
+            "winner_number": 1,
+            "winner_name": "Kingston West",
+            "chosen_numbers": [
+              2,
+              4,
+              5,
+              8
+            ],
+            "hit": false,
+            "effective_chosen_numbers": [
+              2,
+              4,
+              5,
+              6
+            ],
+            "reserve_substitution_applied": true
           },
           {
             "race_number": 4,

@@ -2174,5 +2174,125 @@
     ],
     "total_payout": 816.0,
     "net": -720.0
-  }
+  },
+  "evaluation_history": [
+    {
+      "evaluated_at": "2026-09-06T20:23:02.874846+00:00",
+      "outcome": {
+        "evaluated_legs": 8,
+        "hits": 5,
+        "undecided_legs": 0,
+        "legs": [
+          {
+            "race_number": 8,
+            "status": "avgjort",
+            "winner_number": 7,
+            "winner_name": "Unforgettable A.Y.",
+            "chosen_numbers": [
+              7
+            ],
+            "hit": true
+          },
+          {
+            "race_number": 10,
+            "status": "avgjort",
+            "winner_number": 1,
+            "winner_name": "Dream Mine",
+            "chosen_numbers": [
+              1,
+              2
+            ],
+            "hit": true
+          },
+          {
+            "race_number": 7,
+            "status": "avgjort",
+            "winner_number": 6,
+            "winner_name": "Snickup",
+            "chosen_numbers": [
+              1,
+              6
+            ],
+            "hit": true
+          },
+          {
+            "race_number": 6,
+            "status": "avgjort",
+            "winner_number": 4,
+            "winner_name": "Betting Pacer",
+            "chosen_numbers": [
+              2,
+              3,
+              5
+            ],
+            "hit": false
+          },
+          {
+            "race_number": 5,
+            "status": "avgjort",
+            "winner_number": 1,
+            "winner_name": "Tupelo Honey",
+            "chosen_numbers": [
+              1,
+              5,
+              6,
+              11
+            ],
+            "hit": true
+          },
+          {
+            "race_number": 11,
+            "status": "avgjort",
+            "winner_number": 8,
+            "winner_name": "Great Old Dance",
+            "chosen_numbers": [
+              2,
+              3,
+              4,
+              11
+            ],
+            "hit": false
+          },
+          {
+            "race_number": 4,
+            "status": "avgjort",
+            "winner_number": 5,
+            "winner_name": "PolePosition",
+            "chosen_numbers": [
+              1,
+              2,
+              4,
+              5
+            ],
+            "hit": true
+          },
+          {
+            "race_number": 9,
+            "status": "avgjort",
+            "winner_number": 1,
+            "winner_name": "Handfullofdollar",
+            "chosen_numbers": [
+              2,
+              3,
+              4,
+              11
+            ],
+            "hit": false
+          }
+        ]
+      },
+      "payout": {
+        "breakdown": [
+          {
+            "level": 5,
+            "rows": 48,
+            "per_row": 17.0,
+            "subtotal": 816.0
+          }
+        ],
+        "total_payout": 816.0,
+        "net": -720.0
+      }
+    }
+  ]
 }

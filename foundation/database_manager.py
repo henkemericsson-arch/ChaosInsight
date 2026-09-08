@@ -57,6 +57,26 @@ class DatabaseManager:
     def insert_observation(self, row, or_ignore=True):
         insert_row(self._conn, "observations", row, OBSERVATION_COLUMNS, or_ignore=or_ignore)
 
+    def delete_observations_for_leg(self, game_id, strategy, race_id):
+        #
+        # Tar bort tidigare observationsrader for exakt denna
+        # kombination av (game_id, strategy, race_id) - anvands av
+        # Learning Engine innan nya observationer skrivs vid en
+        # (om-)utvardering, sa att gamla, ev. felaktiga rader (t.ex.
+        # fran innan en bugfix i scratched-/reservhantering) inte
+        # blir kvar sida vid sida med de nya, korrekta och
+        # dubbelraknas i framtida analys (distance_score,
+        # track_condition_score, gallop_risk_score, som alla
+        # kombinerar backfill_starts och observations).
+        #
+        # Returnerar antalet raderade rader.
+        #
+        cur = self._conn.execute(
+            "DELETE FROM observations WHERE game_id = ? AND strategy = ? AND race_id = ?",
+            (game_id, strategy, race_id),
+        )
+        return cur.rowcount
+
     def insert_kamt_v2_forecast(self, row, or_ignore=True):
         #
         # KAMT v2 - skuggat/parallellt lage. Se
@@ -289,6 +309,47 @@ class DatabaseManager:
 
         times = [self._parse_km_time_seconds(r["actual_km_time"]) for r in rows]
         return [t for t in times if t is not None]
+
+    def track_distance_average_km_time(self, track, distance, margin=100):
+        #
+        # Banans/distansens genomsnittliga km-tid over ALLA hastar
+        # (inte begransat till nagon specifik hast) som sprungit pa
+        # just den har banan inom +/- margin meter fran distance.
+        #
+        # Sista utvag-fallback for RaceAnalyzer/BaselineCalculator
+        # (KAMT v2) nar INGEN hast i ett lopp har tillrackligt med
+        # egen historik - da anvands detta grova bana+distans-snitt
+        # istallet for att loppet ska behova hoppas over helt.
+        #
+        # Returnerar (average_seconds, n_starts). average_seconds
+        # ar None om ingen giltig data alls finns.
+        #
+        rows = self._conn.execute(
+            """
+            SELECT actual_km_time FROM backfill_starts
+            WHERE track = ? AND distance IS NOT NULL AND ABS(distance - ?) <= ?
+              AND (actual_scratched IS NULL OR actual_scratched = 0)
+              AND (actual_galloped IS NULL OR actual_galloped = 0)
+              AND (actual_disqualified IS NULL OR actual_disqualified = 0)
+              AND actual_km_time IS NOT NULL
+            UNION ALL
+            SELECT actual_km_time FROM observations
+            WHERE track = ? AND distance IS NOT NULL AND ABS(distance - ?) <= ?
+              AND (actual_scratched IS NULL OR actual_scratched = 0)
+              AND (actual_galloped IS NULL OR actual_galloped = 0)
+              AND (actual_disqualified IS NULL OR actual_disqualified = 0)
+              AND actual_km_time IS NOT NULL
+            """,
+            (track, distance, margin, track, distance, margin),
+        ).fetchall()
+
+        times = [self._parse_km_time_seconds(r["actual_km_time"]) for r in rows]
+        times = [t for t in times if t is not None]
+
+        if not times:
+            return None, 0
+
+        return round(sum(times) / len(times), 3), len(times)
 
     def horse_previous_shoes(self, horse_name, before_date):
         #

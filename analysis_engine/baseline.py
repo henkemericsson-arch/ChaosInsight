@@ -10,6 +10,16 @@ from foundation.database_manager import get_default_manager
 #
 MIN_STARTS_FOR_BASELINE = 3
 
+#
+# Minsta antal underliggande starter som kravs for att lita pa
+# bana+distans-fallbacken (se track_distance_baseline_seconds).
+# Hogre tröskel an MIN_STARTS_FOR_BASELINE eftersom detta ar ett
+# betydligt grövre matt - hela faltets samlade prestation over tid
+# blandas ihop, inte en enskild hasts egen formaga - och behover
+# darfor mer data for att vara nagorlunda tillforlitligt.
+#
+MIN_STARTS_FOR_TRACK_DISTANCE_FALLBACK = 10
+
 
 class BaselineCalculator:
     #
@@ -58,3 +68,25 @@ class BaselineCalculator:
             return None, len(times)
 
         return round(sum(times) / len(times), 3), len(times)
+
+    def track_distance_baseline_seconds(self, track, distance, margin=100):
+        #
+        # Sista utvag-baslinje: banans/distansens genomsnittliga
+        # km-tid over ALLA hastar (inte begransat till nagon
+        # specifik hast) - anvands av RaceAnalyzer nar INGEN hast
+        # i loppet har tillrackligt med egen historik, sa att
+        # loppet inte behover hoppas over helt fran skuggsystemet.
+        #
+        # Kravs fler underliggande starter
+        # (MIN_STARTS_FOR_TRACK_DISTANCE_FALLBACK) an for en
+        # vanlig hastspecifik baslinje - se motivering vid
+        # konstanten ovan.
+        #
+        average, n_starts = self.db.track_distance_average_km_time(
+            track, distance, margin
+        )
+
+        if average is None or n_starts < MIN_STARTS_FOR_TRACK_DISTANCE_FALLBACK:
+            return None
+
+        return average

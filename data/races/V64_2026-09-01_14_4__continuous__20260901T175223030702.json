@@ -1378,7 +1378,7 @@
   ],
   "outcome": {
     "evaluated_legs": 6,
-    "hits": 3,
+    "hits": 5,
     "undecided_legs": 0,
     "legs": [
       {
@@ -1424,7 +1424,14 @@
           9,
           10
         ],
-        "hit": false
+        "hit": true,
+        "effective_chosen_numbers": [
+          5,
+          9,
+          10,
+          11
+        ],
+        "reserve_substitution_applied": true
       },
       {
         "race_number": 5,
@@ -1440,7 +1447,17 @@
           7,
           11
         ],
-        "hit": false
+        "hit": true,
+        "effective_chosen_numbers": [
+          1,
+          4,
+          5,
+          6,
+          7,
+          8,
+          10
+        ],
+        "reserve_substitution_applied": true
       },
       {
         "race_number": 1,
@@ -1462,9 +1479,22 @@
     ]
   },
   "payout": {
-    "breakdown": [],
-    "total_payout": 0.0,
-    "net": -896.0
+    "breakdown": [
+      {
+        "level": 5,
+        "rows": 1,
+        "per_row": 131.0,
+        "subtotal": 131.0
+      },
+      {
+        "level": 4,
+        "rows": 18,
+        "per_row": 15.0,
+        "subtotal": 270.0
+      }
+    ],
+    "total_payout": 401.0,
+    "net": -495.0
   },
   "evaluation_history": [
     {
@@ -1558,6 +1588,129 @@
         "breakdown": [],
         "total_payout": 0.0,
         "net": -896.0
+      }
+    },
+    {
+      "evaluated_at": "2026-09-06T20:21:17.799020+00:00",
+      "outcome": {
+        "evaluated_legs": 6,
+        "hits": 5,
+        "undecided_legs": 0,
+        "legs": [
+          {
+            "race_number": 3,
+            "status": "avgjort",
+            "winner_number": 6,
+            "winner_name": "Perfect Gentleman",
+            "chosen_numbers": [
+              3
+            ],
+            "hit": false
+          },
+          {
+            "race_number": 2,
+            "status": "avgjort",
+            "winner_number": 4,
+            "winner_name": "My D.X.One",
+            "chosen_numbers": [
+              4,
+              6
+            ],
+            "hit": true
+          },
+          {
+            "race_number": 4,
+            "status": "avgjort",
+            "winner_number": 6,
+            "winner_name": "Orion",
+            "chosen_numbers": [
+              3,
+              6
+            ],
+            "hit": true
+          },
+          {
+            "race_number": 6,
+            "status": "avgjort",
+            "winner_number": 11,
+            "winner_name": "Allant Express",
+            "chosen_numbers": [
+              5,
+              7,
+              9,
+              10
+            ],
+            "hit": true,
+            "effective_chosen_numbers": [
+              5,
+              9,
+              10,
+              11
+            ],
+            "reserve_substitution_applied": true
+          },
+          {
+            "race_number": 5,
+            "status": "avgjort",
+            "winner_number": 10,
+            "winner_name": "Iron Dice",
+            "chosen_numbers": [
+              1,
+              2,
+              4,
+              5,
+              6,
+              7,
+              11
+            ],
+            "hit": true,
+            "effective_chosen_numbers": [
+              1,
+              4,
+              5,
+              6,
+              7,
+              8,
+              10
+            ],
+            "reserve_substitution_applied": true
+          },
+          {
+            "race_number": 1,
+            "status": "avgjort",
+            "winner_number": 1,
+            "winner_name": "Freeman Dance",
+            "chosen_numbers": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8
+            ],
+            "hit": true
+          }
+        ]
+      },
+      "payout": {
+        "breakdown": [
+          {
+            "level": 5,
+            "rows": 1,
+            "per_row": 131.0,
+            "subtotal": 131.0
+          },
+          {
+            "level": 4,
+            "rows": 18,
+            "per_row": 15.0,
+            "subtotal": 270.0
+          }
+        ],
+        "total_payout": 401.0,
+        "net": -495.0
       }
     }
   ]

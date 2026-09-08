@@ -2469,6 +2469,121 @@
         "total_payout": 0.0,
         "net": -1792.0
       }
+    },
+    {
+      "evaluated_at": "2026-09-06T20:30:05.658362+00:00",
+      "outcome": {
+        "evaluated_legs": 8,
+        "hits": 5,
+        "undecided_legs": 0,
+        "legs": [
+          {
+            "race_number": 1,
+            "status": "avgjort",
+            "winner_number": 4,
+            "winner_name": "I'm Still Standing",
+            "chosen_numbers": [
+              5,
+              12
+            ],
+            "hit": false
+          },
+          {
+            "race_number": 2,
+            "status": "avgjort",
+            "winner_number": 3,
+            "winner_name": "Global Gratitude",
+            "chosen_numbers": [
+              12
+            ],
+            "hit": false
+          },
+          {
+            "race_number": 3,
+            "status": "avgjort",
+            "winner_number": 6,
+            "winner_name": "Giotto Grif",
+            "chosen_numbers": [
+              2,
+              6
+            ],
+            "hit": true
+          },
+          {
+            "race_number": 4,
+            "status": "avgjort",
+            "winner_number": 2,
+            "winner_name": "Charente Bro",
+            "chosen_numbers": [
+              2,
+              3,
+              9,
+              11
+            ],
+            "hit": true
+          },
+          {
+            "race_number": 5,
+            "status": "avgjort",
+            "winner_number": 4,
+            "winner_name": "Gunpoint",
+            "chosen_numbers": [
+              1,
+              3,
+              6,
+              8
+            ],
+            "hit": false
+          },
+          {
+            "race_number": 6,
+            "status": "avgjort",
+            "winner_number": 12,
+            "winner_name": "Diva Ek",
+            "chosen_numbers": [
+              6,
+              8,
+              10,
+              12
+            ],
+            "hit": true
+          },
+          {
+            "race_number": 7,
+            "status": "avgjort",
+            "winner_number": 4,
+            "winner_name": "Just for Show",
+            "chosen_numbers": [
+              2,
+              4,
+              7,
+              9
+            ],
+            "hit": true
+          },
+          {
+            "race_number": 8,
+            "status": "avgjort",
+            "winner_number": 15,
+            "winner_name": "Gaudi Laksmy",
+            "chosen_numbers": [
+              1,
+              2,
+              3,
+              10,
+              13,
+              14,
+              15
+            ],
+            "hit": true
+          }
+        ]
+      },
+      "payout": {
+        "breakdown": [],
+        "total_payout": 0.0,
+        "net": -1792.0
+      }
     }
   ]
 }

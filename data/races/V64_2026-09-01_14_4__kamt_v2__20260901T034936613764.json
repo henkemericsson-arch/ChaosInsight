@@ -1193,7 +1193,14 @@
           9,
           10
         ],
-        "hit": false
+        "hit": false,
+        "effective_chosen_numbers": [
+          2,
+          5,
+          9,
+          10
+        ],
+        "reserve_substitution_applied": true
       }
     ]
   },
@@ -1267,6 +1274,86 @@
               10
             ],
             "hit": false
+          }
+        ]
+      },
+      "payout": {
+        "breakdown": [],
+        "total_payout": 0.0,
+        "net": -64.0
+      }
+    },
+    {
+      "evaluated_at": "2026-09-06T20:21:20.521861+00:00",
+      "outcome": {
+        "evaluated_legs": 5,
+        "hits": 2,
+        "undecided_legs": 0,
+        "legs": [
+          {
+            "race_number": 1,
+            "status": "avgjort",
+            "winner_number": 1,
+            "winner_name": "Freeman Dance",
+            "chosen_numbers": [
+              4,
+              5,
+              6,
+              7
+            ],
+            "hit": false
+          },
+          {
+            "race_number": 2,
+            "status": "avgjort",
+            "winner_number": 4,
+            "winner_name": "My D.X.One",
+            "chosen_numbers": [
+              4,
+              6
+            ],
+            "hit": true
+          },
+          {
+            "race_number": 4,
+            "status": "avgjort",
+            "winner_number": 6,
+            "winner_name": "Orion",
+            "chosen_numbers": [
+              5,
+              6
+            ],
+            "hit": true
+          },
+          {
+            "race_number": 5,
+            "status": "avgjort",
+            "winner_number": 10,
+            "winner_name": "Iron Dice",
+            "chosen_numbers": [
+              12
+            ],
+            "hit": false
+          },
+          {
+            "race_number": 6,
+            "status": "avgjort",
+            "winner_number": 11,
+            "winner_name": "Allant Express",
+            "chosen_numbers": [
+              2,
+              7,
+              9,
+              10
+            ],
+            "hit": false,
+            "effective_chosen_numbers": [
+              2,
+              5,
+              9,
+              10
+            ],
+            "reserve_substitution_applied": true
           }
         ]
       },

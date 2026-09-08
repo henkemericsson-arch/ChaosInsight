@@ -1708,7 +1708,14 @@
           11,
           14
         ],
-        "hit": true
+        "hit": true,
+        "effective_chosen_numbers": [
+          2,
+          9,
+          11,
+          13
+        ],
+        "reserve_substitution_applied": true
       },
       {
         "race_number": 5,
@@ -1742,5 +1749,113 @@
     ],
     "total_payout": 404.0,
     "net": 148.0
-  }
+  },
+  "evaluation_history": [
+    {
+      "evaluated_at": "2026-09-06T20:19:42.008395+00:00",
+      "outcome": {
+        "evaluated_legs": 6,
+        "hits": 5,
+        "undecided_legs": 0,
+        "legs": [
+          {
+            "race_number": 6,
+            "status": "avgjort",
+            "winner_number": 1,
+            "winner_name": "Ideal Kronos",
+            "chosen_numbers": [
+              1
+            ],
+            "hit": true
+          },
+          {
+            "race_number": 4,
+            "status": "avgjort",
+            "winner_number": 4,
+            "winner_name": "Miguel",
+            "chosen_numbers": [
+              3,
+              4
+            ],
+            "hit": true
+          },
+          {
+            "race_number": 8,
+            "status": "avgjort",
+            "winner_number": 5,
+            "winner_name": "L.L.Imhoturnot",
+            "chosen_numbers": [
+              2,
+              5
+            ],
+            "hit": true
+          },
+          {
+            "race_number": 9,
+            "status": "avgjort",
+            "winner_number": 4,
+            "winner_name": "Love Me Sjöhammar",
+            "chosen_numbers": [
+              1,
+              3,
+              6,
+              11
+            ],
+            "hit": false
+          },
+          {
+            "race_number": 7,
+            "status": "avgjort",
+            "winner_number": 9,
+            "winner_name": "Rokka Tiger M.G.",
+            "chosen_numbers": [
+              2,
+              9,
+              11,
+              14
+            ],
+            "hit": true,
+            "effective_chosen_numbers": [
+              2,
+              9,
+              11,
+              13
+            ],
+            "reserve_substitution_applied": true
+          },
+          {
+            "race_number": 5,
+            "status": "avgjort",
+            "winner_number": 4,
+            "winner_name": "Sainz Zon",
+            "chosen_numbers": [
+              1,
+              4,
+              5,
+              6
+            ],
+            "hit": true
+          }
+        ]
+      },
+      "payout": {
+        "breakdown": [
+          {
+            "level": 5,
+            "rows": 4,
+            "per_row": 45.0,
+            "subtotal": 180.0
+          },
+          {
+            "level": 4,
+            "rows": 32,
+            "per_row": 7.0,
+            "subtotal": 224.0
+          }
+        ],
+        "total_payout": 404.0,
+        "net": 148.0
+      }
+    }
+  ]
 }

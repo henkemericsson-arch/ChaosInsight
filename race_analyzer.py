@@ -18,7 +18,6 @@ from analysis_engine.cross_matrix_effects import CrossMatrixEffects
 from analysis_engine.monte_carlo_engine import MonteCarloEngine
 from trav_race_simulator import TravRaceSimulator
 
-
 #
 # Antagen galoppfrekvens (0-1) for hastar utan tillrackligt med
 # egen historik. Ovprovat - samma forsiktighet som ovriga
@@ -63,15 +62,15 @@ class RaceAnalyzer:
     def analyze(self, race, weather=None):
         #
         # race: ett Race-objekt (models/race.py) med .horses,
-        #       .distance, .track_condition, .start_method, .date
+        #       .distance, .track_condition, .start_method, .date,
+        #       .track
         # weather: dict enligt samma format som
         #          analysis_data.weather ({"precipitation_mm": ...}),
         #          eller None
         #
         # Returnerar {horse_number: sannolikhet_procent}, eller
-        # None om INGEN hast i loppet hade tillrackligt med
-        # historik for en egen baslinje (loppet kan da inte
-        # simuleras meningsfullt).
+        # None om varken nagon hast i loppet HAR egen historik,
+        # eller bana+distans-fallbacken (se nedan) gick att bygga.
         #
         precipitation_mm = (weather or {}).get("precipitation_mm", 0)
 
@@ -128,19 +127,42 @@ class RaceAnalyzer:
 
         #
         # Fallback for hastar utan egen baslinje: faltets snitt
-        # bland de hastar i loppet som HAR data. Om ingen enda
-        # hast har tillrackligt med historik kan loppet inte
-        # simuleras meningsfullt alls.
+        # bland de hastar i loppet som HAR data.
         #
         known_baselines = [
             h["baseline_seconds"] for h in horses_context
             if h["baseline_seconds"] is not None
         ]
 
-        if not known_baselines:
-            return None
+        if known_baselines:
+            field_average_baseline = sum(known_baselines) / len(known_baselines)
+        else:
+            #
+            # INGEN hast i loppet har egen tillrackling historik
+            # alls - sista utvag: anvand banans/distansens
+            # generella genomsnitt (over ALLA hastar som sprungit
+            # dar historiskt, inte bara de har startande) istallet
+            # for att hoppa over loppet helt. Grövre matt, men
+            # battre an att utesluta loppet fran skuggsystemet -
+            # sarskilt relevant medan backfillen fortfarande
+            # bygger upp tackning for nya/relativt ovanliga banor
+            # och distanser.
+            #
+            fallback_baseline = self.baseline_calc.track_distance_baseline_seconds(
+                race.track, race.distance
+            )
 
-        field_average_baseline = sum(known_baselines) / len(known_baselines)
+            if fallback_baseline is None:
+                #
+                # Aven bana+distans-fallbacken saknar tillrackligt
+                # med data (t.ex. en ny bana, eller en ovanlig
+                # distans som annu inte hunnit samlas in) - da
+                # finns inget meningsfullt att simulera pa, och
+                # loppet hoppas over precis som tidigare.
+                #
+                return None
+
+            field_average_baseline = fallback_baseline
 
         for h in horses_context:
             if h["baseline_seconds"] is None:

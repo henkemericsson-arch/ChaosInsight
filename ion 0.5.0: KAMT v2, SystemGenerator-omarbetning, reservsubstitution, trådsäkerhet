@@ -1,0 +1,36 @@
+[33m96afe58[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m)[m KAMT v2: fullständig Monte Carlo-arkitektur, skuggat läge och jämförelse
+[33m6ffd201[m Fixa race_number-kollision, ombygg SystemGenerator, SQLite-historik, arkitekturplanering
+[33mfbd58ee[m Fix .gitignore: keep tracking data/races (irreplaceable prediction/evaluation data)
+[33m753100f[m Exclude generated data files from version control
+[33m6661f80[m Fungerande dataflöde: kalender till analys, plus crowd_engine med riktiga odds- och streckdata
+[33m6cca451[m Fungerande dataflöde: kalender till analys, plus crowd_engine med riktiga odds- och streckdata
+[33m0340f75[m Fungerande dataflöde: kalender till analys, plus crowd_engine med riktiga odds- och streckdata
+[33mb2a03c1[m Fungerande dataflöde: kalender till analys, plus crowd_engine med riktiga odds- och streckdata
+[33m018e144[m Fungerande dataflöde: kalender till analys, plus crowd_engine med riktiga odds- och streckdata
+[33m3ad5052[m Fungerande dataflöde: kalender till analys, plus crowd_engine med riktiga odds- och streckdata
+[33m823f450[m Fungerande dataflöde: kalender till analys, plus crowd_engine med riktiga odds- och streckdata
+[33ma693974[m Fungerande dataflöde: kalender till analys, plus crowd_engine med riktiga odds- och streckdata
+[33mf6806f0[m Fungerande dataflöde: kalender till analys, plus crowd_engine med riktiga odds- och streckdata
+[33m74c084b[m Fungerande dataflöde: kalender till analys, plus crowd_engine med riktiga odds- och streckdata
+[33m6eb23a5[m Fungerande dataflöde: kalender till analys, plus crowd_engine med riktiga odds- och streckdata
+[33m2128725[m Fungerande dataflöde: kalender till analys, plus crowd_engine med riktiga odds- och streckdata
+[33m8f21881[m Fungerande dataflöde: kalender till analys, plus crowd_engine med riktiga odds- och streckdata
+[33mc8925dc[m Fungerande dataflöde: kalender till analys, plus crowd_engine med riktiga odds- och streckdata
+[33mb8d0b20[m Fungerande dataflöde: kalender till analys, plus crowd_engine med riktiga odds- och streckdata
+[33mdf54b7c[m Fungerande dataflöde: kalender till analys, plus crowd_engine med riktiga odds- och streckdata
+[33m47a13a5[m Fungerande dataflöde: kalender till analys, plus crowd_engine med riktiga odds- och streckdata
+[33me240d2c[m Fungerande dataflöde: kalender till analys, plus crowd_engine med riktiga odds- och streckdata
+[33m0dd3d11[m Fungerande dataflöde: kalender till analys, plus crowd_engine med riktiga odds- och streckdata
+[33md545331[m Fungerande dataflöde: kalender till analys, plus crowd_engine med riktiga odds- och streckdata
+[33mb11da80[m Fungerande dataflöde: kalender till analys, plus crowd_engine med riktiga odds- och streckdata
+[33m0f4cdd8[m Fungerande dataflöde: kalender till analys, plus crowd_engine med riktiga odds- och streckdata
+[33mb91ebff[m Fungerande dataflöde: kalender till analys, plus crowd_engine med riktiga odds- och streckdata
+[33m60bc4fd[m Fungerande dataflöde: kalender till analys
+[33mcc734d7[m Prototype 1 - current state before API migration
+[33m634098d[m[33m ([m[1;33mtag: [m[1;33mv0.1[m[33m)[m Implement ChaosInsight analysis engine
+[33ma083c39[m Add CLI and ignore log files
+[33m991b476[m Clean provider structure
+[33mc346b92[m Add .gitignore
+[33maa75def[m Merge branch 'main' of https://github.com/henkemericsson-arch/ChaosInsight
+[33m313f7a4[m Initial commit
+[33m0a54416[m Initial commit

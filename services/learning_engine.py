@@ -38,6 +38,27 @@ class LearningEngine:
     # ut kombinatoriskt hur manga av vara egna rader som hamnar
     # pa varje ratt-niva - se _row_distribution().
     #
+    # Reservsubstitution: om en markerad hast blir struken efter
+    # att systemet sparats, ersatter ATG automatiskt markeringen
+    # med nasta tillgangliga hast (som inte redan ar markerad) i
+    # loppets reservordning
+    # (race["pools"][spel]["result"]["reserveOrder"]). Hit/miss-
+    # berakningen har tar hansyn till detta - annars skulle ett
+    # lopp som egentligen traffade ratt (via reservbytet) felaktigt
+    # visas som miss. Se _apply_reserve_substitution().
+    #
+    # OBS - viktig detalj upptackt vid felsokning: reservordningen
+    # och strukningarna finns INTE i det per-lopp-anrop
+    # (client.get_race_result(), som hamtar
+    # /races/{race_id}/extended) som annars anvands for att hamta
+    # sjalva resultatet (finishOrder, place, kmTime m.m.) - den
+    # endpointen saknar "pools" helt. Bade scratchings och
+    # reserveOrder finns bara i client.get_game(game_id) (hela
+    # spelets endpoint). Darfor hamtas hela spelet EN GANG per
+    # evaluate()-anrop (inte per lopp) for att fa fram den
+    # informationen, medan sjalva resultatet fortfarande hamtas
+    # per lopp som tidigare.
+    #
 
     PREDICTIONS_DIR = "data/races"
 
@@ -55,11 +76,28 @@ class LearningEngine:
         with open(path, encoding="utf-8") as f:
             prediction = json.load(f)
 
+        game_type = prediction.get("spel")
+        #
+        # OBS: parametern till evaluate() heter "game_id" men ar
+        # egentligen prediction_id (filnamnet, inklusive strategi
+        # och tidsstampel) - anvands har bara for att hitta filen.
+        # Det RIKTIGA game_id:t (t.ex. "V85_2026-09-06_7_5") som
+        # ATG:s API behover finns separat inuti den sparade filen.
+        # Att av misstag skicka prediction_id till ATG:s API gav
+        # "400 Bad Request" och gjorde att reservordningen aldrig
+        # gick att hamta.
+        #
+        real_game_id = prediction.get("game_id")
+        reserve_info_by_race_id = self._fetch_reserve_info(real_game_id, game_type)
+
         leg_reports = []
 
         for leg in prediction["legs"]:
             results = self._fetch_results(leg)
-            leg_report = self._build_leg_report(leg, results)
+            scratchings, reserve_order = reserve_info_by_race_id.get(
+                leg.get("race_id"), ([], [])
+            )
+            leg_report = self._build_leg_report(leg, results, scratchings, reserve_order)
 
             leg_reports.append(leg_report)
 
@@ -113,6 +151,40 @@ class LearningEngine:
         self._print_report(prediction, outcome)
         return outcome
 
+    def _fetch_reserve_info(self, game_id, game_type):
+        #
+        # Hamtar scratchings/reserveOrder for ALLA lopp i spelet
+        # pa en gang, via get_game() (den enda endpointen som
+        # faktiskt har "pools"-data). Returnerar
+        # {race_id: (scratchings, reserve_order)}. Tom dict om
+        # hamtningen misslyckas helt - ska aldrig stoppa resten
+        # av utvarderingen, bara innebara att inget reservbyte
+        # tillampas (samma som tidigare beteende).
+        #
+        if not game_type:
+            return {}
+
+        try:
+            full_game_data = self.client.get_game(game_id)
+        except Exception as exc:
+            print(f"[Learning Engine] Kunde inte hamta reservordning: {exc}")
+            return {}
+
+        if not full_game_data:
+            return {}
+
+        reserve_info = {}
+        for raw_race in full_game_data.get("races", []):
+            race_id = raw_race.get("id")
+            if race_id is None:
+                continue
+            scratchings, reserve_order = self.result_parser.parse_scratchings_and_reserves(
+                raw_race, game_type
+            )
+            reserve_info[race_id] = (scratchings, reserve_order)
+
+        return reserve_info
+
     def _fetch_results(self, leg):
         race_id = leg.get("race_id")
         if race_id is None:
@@ -126,7 +198,42 @@ class LearningEngine:
         return self.result_parser.parse(raw_data)
 
     @staticmethod
-    def _build_leg_report(leg, results):
+    def _apply_reserve_substitution(chosen_numbers, scratchings, reserve_order):
+        #
+        # Ersatter varje struken hast bland dina valda med nasta
+        # tillgangliga reserv (som du inte redan har markerat, och
+        # som inte heller sjalv ar struken), enligt ATG:s
+        # reservordning for loppet. Om nagot av chosen_numbers inte
+        # ar struket, lamnas det oforandrat.
+        #
+        # Exempel (bekraftat mot verklig ATG-data 2026-09-06):
+        # chosen={2,7}, scratchings=[4,7],
+        # reserve_order=[2,5,3,9,1,11,6,10,7,8,4]
+        # -> hast 7 ar struken, 2 ar redan markerad -> nasta lediga
+        # i turordningen ar 5 -> effektivt valda blir {2,5}.
+        #
+        if not scratchings or not reserve_order:
+            return set(chosen_numbers)
+
+        scratchings_set = set(scratchings)
+        needs_replacement = [n for n in chosen_numbers if n in scratchings_set]
+
+        if not needs_replacement:
+            return set(chosen_numbers)
+
+        effective = {n for n in chosen_numbers if n not in scratchings_set}
+
+        for _ in needs_replacement:
+            for candidate in reserve_order:
+                if candidate in effective or candidate in scratchings_set:
+                    continue
+                effective.add(candidate)
+                break
+
+        return effective
+
+    @staticmethod
+    def _build_leg_report(leg, results, scratchings=None, reserve_order=None):
         if results is None:
             return {
                 "race_number": leg["race_number"],
@@ -141,12 +248,8 @@ class LearningEngine:
         if winner is None:
             #
             # ATG rapporterar ibland vinnaren via "place" istallet
-            # for (eller utover) "finishOrder" - upptackt nar ett
-            # lopp med en bekraftad vinnare (place=1 i ATG:s
-            # rådata) andå flaggades som "ej avgjort" har, eftersom
-            # finishOrder saknades for just den startande. Anvand
-            # place som fallback nar finish_order inte racker for
-            # att hitta en vinnare.
+            # for (eller utover) "finishOrder". Anvand place som
+            # fallback nar finish_order inte racker.
             #
             winner = next(
                 (r for r in results if r["place"] == 1), None
@@ -166,18 +269,33 @@ class LearningEngine:
                 "hit": False,
             }
 
-        chosen_numbers = set(leg.get("chosen_numbers", []))
+        original_chosen = set(leg.get("chosen_numbers", []))
+        effective_chosen = LearningEngine._apply_reserve_substitution(
+            original_chosen, scratchings or [], reserve_order or []
+        )
 
-        hit = winner["number"] in chosen_numbers
+        hit = winner["number"] in effective_chosen
 
-        return {
+        report = {
             "race_number": leg["race_number"],
             "status": "avgjort",
             "winner_number": winner["number"],
             "winner_name": winner["name"],
-            "chosen_numbers": sorted(chosen_numbers),
+            "chosen_numbers": sorted(original_chosen),
             "hit": hit,
         }
+
+        if effective_chosen != original_chosen:
+            #
+            # En eller flera av dina ursprungligen valda hastar
+            # blev strukna och ersattes automatiskt av ATG:s
+            # reservordning - synliggor det i rapporten istallet
+            # for att bara tyst byta ut hit/miss-vardet.
+            #
+            report["effective_chosen_numbers"] = sorted(effective_chosen)
+            report["reserve_substitution_applied"] = True
+
+        return report
 
     @staticmethod
     def _row_distribution(leg_counts, leg_hits):
@@ -262,7 +380,9 @@ class LearningEngine:
 
         #
         # Bygg upp leg_counts/leg_hits i samma ordning for bade
-        # antal valda hastar och traff/miss per lopp.
+        # antal valda hastar och traff/miss per lopp. leg_hits
+        # anvander redan den reservsubstitution-korrigerade
+        # hit-flaggan fran outcome["legs"] (se _build_leg_report).
         #
         hits_by_race_number = {
             leg_report["race_number"]: leg_report["hit"]
@@ -319,6 +439,24 @@ class LearningEngine:
         logged_at = datetime.now(timezone.utc).isoformat()
 
         db = DatabaseManager()
+
+        #
+        # Rensa bort eventuella tidigare observationer for exakt
+        # denna (game_id, strategi, lopp) innan nya skrivs - annars
+        # kan gamla, ev. felaktiga rader (t.ex. fran innan en
+        # bugfix) bli kvar sida vid sida med de nya, korrekta.
+        # Gors vid VARJE (om-)utvardering, inte bara vid en
+        # engangsstadning - sa databasen forblir ren aven vid
+        # framtida omvarderingar.
+        #
+        deleted = db.delete_observations_for_leg(
+            prediction["game_id"], prediction.get("strategy"), leg.get("race_id")
+        )
+        if deleted:
+            print(
+                f"[Learning Engine] Rensade {deleted} gamla observationer "
+                f"for V{leg['race_number']} fore omvardering"
+            )
 
         for horse in leg["horses"]:
             result = results_by_number.get(horse["number"], {})
@@ -414,10 +552,18 @@ class LearningEngine:
             winner_name = leg["winner_name"]
             chosen_numbers = leg["chosen_numbers"]
 
+            substitution_note = ""
+            if leg.get("reserve_substitution_applied"):
+                substitution_note = (
+                    f"  [REERVBYTE: {chosen_numbers} -> "
+                    f"{leg['effective_chosen_numbers']}]"
+                )
+
             print(
                 f"V{race_number}: {marker}  "
                 f"vinnare: {winner_number}. {winner_name}  "
                 f"| dina hastar: {chosen_numbers}"
+                f"{substitution_note}"
             )
 
         print()

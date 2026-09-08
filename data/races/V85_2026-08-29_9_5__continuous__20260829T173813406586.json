@@ -2386,7 +2386,14 @@
           9,
           10
         ],
-        "hit": true
+        "hit": true,
+        "effective_chosen_numbers": [
+          3,
+          4,
+          9,
+          10
+        ],
+        "reserve_substitution_applied": true
       },
       {
         "race_number": 4,
@@ -2517,6 +2524,143 @@
               10
             ],
             "hit": true
+          },
+          {
+            "race_number": 4,
+            "status": "avgjort",
+            "winner_number": 2,
+            "winner_name": "Svarte Petter",
+            "chosen_numbers": [
+              1,
+              2,
+              4,
+              11
+            ],
+            "hit": true
+          },
+          {
+            "race_number": 7,
+            "status": "avgjort",
+            "winner_number": 8,
+            "winner_name": "Nickel Occagnes",
+            "chosen_numbers": [
+              1,
+              3,
+              5,
+              8
+            ],
+            "hit": true
+          },
+          {
+            "race_number": 1,
+            "status": "avgjort",
+            "winner_number": 14,
+            "winner_name": "Glory Forever",
+            "chosen_numbers": [
+              1,
+              7,
+              8,
+              11
+            ],
+            "hit": false
+          }
+        ]
+      },
+      "payout": {
+        "breakdown": [
+          {
+            "level": 7,
+            "rows": 4,
+            "per_row": 486.0,
+            "subtotal": 1944.0
+          },
+          {
+            "level": 6,
+            "rows": 52,
+            "per_row": 21.0,
+            "subtotal": 1092.0
+          },
+          {
+            "level": 5,
+            "rows": 272,
+            "per_row": 6.0,
+            "subtotal": 1632.0
+          }
+        ],
+        "total_payout": 4668.0,
+        "net": 3132.0
+      }
+    },
+    {
+      "evaluated_at": "2026-09-06T20:23:42.280682+00:00",
+      "outcome": {
+        "evaluated_legs": 8,
+        "hits": 7,
+        "undecided_legs": 0,
+        "legs": [
+          {
+            "race_number": 8,
+            "status": "avgjort",
+            "winner_number": 6,
+            "winner_name": "Epic Kronos",
+            "chosen_numbers": [
+              6
+            ],
+            "hit": true
+          },
+          {
+            "race_number": 6,
+            "status": "avgjort",
+            "winner_number": 7,
+            "winner_name": "X.O.Kemp",
+            "chosen_numbers": [
+              1,
+              7
+            ],
+            "hit": true
+          },
+          {
+            "race_number": 3,
+            "status": "avgjort",
+            "winner_number": 14,
+            "winner_name": "Maharasha",
+            "chosen_numbers": [
+              8,
+              14
+            ],
+            "hit": true
+          },
+          {
+            "race_number": 2,
+            "status": "avgjort",
+            "winner_number": 3,
+            "winner_name": "Meydan Silver",
+            "chosen_numbers": [
+              3,
+              11,
+              12
+            ],
+            "hit": true
+          },
+          {
+            "race_number": 5,
+            "status": "avgjort",
+            "winner_number": 4,
+            "winner_name": "Xanthis Lewis",
+            "chosen_numbers": [
+              4,
+              8,
+              9,
+              10
+            ],
+            "hit": true,
+            "effective_chosen_numbers": [
+              3,
+              4,
+              9,
+              10
+            ],
+            "reserve_substitution_applied": true
           },
           {
             "race_number": 4,

@@ -1578,5 +1578,105 @@
     "breakdown": [],
     "total_payout": 0.0,
     "net": -768.0
-  }
+  },
+  "evaluation_history": [
+    {
+      "evaluated_at": "2026-09-06T20:19:10.993750+00:00",
+      "outcome": {
+        "evaluated_legs": 7,
+        "hits": 4,
+        "undecided_legs": 0,
+        "legs": [
+          {
+            "race_number": 7,
+            "status": "avgjort",
+            "winner_number": 5,
+            "winner_name": "Ernest Jet",
+            "chosen_numbers": [
+              8
+            ],
+            "hit": false
+          },
+          {
+            "race_number": 6,
+            "status": "avgjort",
+            "winner_number": 8,
+            "winner_name": "Zozo W.F.",
+            "chosen_numbers": [
+              8,
+              11
+            ],
+            "hit": true
+          },
+          {
+            "race_number": 4,
+            "status": "avgjort",
+            "winner_number": 9,
+            "winner_name": "Louis Vuitton",
+            "chosen_numbers": [
+              4,
+              5
+            ],
+            "hit": false
+          },
+          {
+            "race_number": 5,
+            "status": "avgjort",
+            "winner_number": 2,
+            "winner_name": "Global Giant",
+            "chosen_numbers": [
+              1,
+              2,
+              7
+            ],
+            "hit": true
+          },
+          {
+            "race_number": 10,
+            "status": "avgjort",
+            "winner_number": 1,
+            "winner_name": "King Light",
+            "chosen_numbers": [
+              1,
+              3,
+              4,
+              7
+            ],
+            "hit": true
+          },
+          {
+            "race_number": 8,
+            "status": "avgjort",
+            "winner_number": 9,
+            "winner_name": "Remina",
+            "chosen_numbers": [
+              1,
+              2,
+              3,
+              9
+            ],
+            "hit": true
+          },
+          {
+            "race_number": 9,
+            "status": "avgjort",
+            "winner_number": 6,
+            "winner_name": "Queen",
+            "chosen_numbers": [
+              1,
+              2,
+              3,
+              5
+            ],
+            "hit": false
+          }
+        ]
+      },
+      "payout": {
+        "breakdown": [],
+        "total_payout": 0.0,
+        "net": -768.0
+      }
+    }
+  ]
 }

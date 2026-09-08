@@ -1850,7 +1850,7 @@
   ],
   "outcome": {
     "evaluated_legs": 8,
-    "hits": 4,
+    "hits": 5,
     "undecided_legs": 0,
     "legs": [
       {
@@ -1870,7 +1870,20 @@
           9,
           10
         ],
-        "hit": true
+        "hit": true,
+        "effective_chosen_numbers": [
+          1,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11
+        ],
+        "reserve_substitution_applied": true
       },
       {
         "race_number": 2,
@@ -1882,7 +1895,13 @@
           4,
           5
         ],
-        "hit": false
+        "hit": true,
+        "effective_chosen_numbers": [
+          2,
+          4,
+          5
+        ],
+        "reserve_substitution_applied": true
       },
       {
         "race_number": 3,
@@ -1929,7 +1948,14 @@
           8,
           9
         ],
-        "hit": false
+        "hit": false,
+        "effective_chosen_numbers": [
+          5,
+          6,
+          8,
+          10
+        ],
+        "reserve_substitution_applied": true
       },
       {
         "race_number": 7,
@@ -1953,7 +1979,14 @@
           10,
           11
         ],
-        "hit": true
+        "hit": true,
+        "effective_chosen_numbers": [
+          4,
+          8,
+          10,
+          11
+        ],
+        "reserve_substitution_applied": true
       }
     ]
   },
@@ -2071,6 +2104,156 @@
               11
             ],
             "hit": true
+          }
+        ]
+      },
+      "payout": {
+        "breakdown": [],
+        "total_payout": 0.0,
+        "net": -1920.0
+      }
+    },
+    {
+      "evaluated_at": "2026-09-06T20:32:16.862158+00:00",
+      "outcome": {
+        "evaluated_legs": 8,
+        "hits": 5,
+        "undecided_legs": 0,
+        "legs": [
+          {
+            "race_number": 1,
+            "status": "avgjort",
+            "winner_number": 4,
+            "winner_name": "Snack",
+            "chosen_numbers": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8,
+              9,
+              10
+            ],
+            "hit": true,
+            "effective_chosen_numbers": [
+              1,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8,
+              9,
+              10,
+              11
+            ],
+            "reserve_substitution_applied": true
+          },
+          {
+            "race_number": 2,
+            "status": "avgjort",
+            "winner_number": 2,
+            "winner_name": "Nightbird",
+            "chosen_numbers": [
+              3,
+              4,
+              5
+            ],
+            "hit": true,
+            "effective_chosen_numbers": [
+              2,
+              4,
+              5
+            ],
+            "reserve_substitution_applied": true
+          },
+          {
+            "race_number": 3,
+            "status": "avgjort",
+            "winner_number": 8,
+            "winner_name": "ObiWan Keeper",
+            "chosen_numbers": [
+              5,
+              8
+            ],
+            "hit": true
+          },
+          {
+            "race_number": 4,
+            "status": "avgjort",
+            "winner_number": 3,
+            "winner_name": "Ultimus",
+            "chosen_numbers": [
+              7
+            ],
+            "hit": false
+          },
+          {
+            "race_number": 5,
+            "status": "avgjort",
+            "winner_number": 5,
+            "winner_name": "Caribbean Lemon",
+            "chosen_numbers": [
+              3,
+              5,
+              6,
+              8
+            ],
+            "hit": true
+          },
+          {
+            "race_number": 6,
+            "status": "avgjort",
+            "winner_number": 4,
+            "winner_name": "Karin B.",
+            "chosen_numbers": [
+              5,
+              6,
+              8,
+              9
+            ],
+            "hit": false,
+            "effective_chosen_numbers": [
+              5,
+              6,
+              8,
+              10
+            ],
+            "reserve_substitution_applied": true
+          },
+          {
+            "race_number": 7,
+            "status": "avgjort",
+            "winner_number": 6,
+            "winner_name": "Simon Palema",
+            "chosen_numbers": [
+              7,
+              8
+            ],
+            "hit": false
+          },
+          {
+            "race_number": 8,
+            "status": "avgjort",
+            "winner_number": 11,
+            "winner_name": "Mister Nabab",
+            "chosen_numbers": [
+              1,
+              4,
+              10,
+              11
+            ],
+            "hit": true,
+            "effective_chosen_numbers": [
+              4,
+              8,
+              10,
+              11
+            ],
+            "reserve_substitution_applied": true
           }
         ]
       },

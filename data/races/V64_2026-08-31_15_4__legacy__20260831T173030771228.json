@@ -1459,7 +1459,7 @@
   ],
   "outcome": {
     "evaluated_legs": 6,
-    "hits": 4,
+    "hits": 5,
     "undecided_legs": 0,
     "legs": [
       {
@@ -1518,7 +1518,14 @@
           7,
           12
         ],
-        "hit": false
+        "hit": true,
+        "effective_chosen_numbers": [
+          1,
+          6,
+          7,
+          8
+        ],
+        "reserve_substitution_applied": true
       },
       {
         "race_number": 3,
@@ -1538,14 +1545,20 @@
   "payout": {
     "breakdown": [
       {
+        "level": 5,
+        "rows": 4,
+        "per_row": 9.0,
+        "subtotal": 36.0
+      },
+      {
         "level": 4,
-        "rows": 16,
+        "rows": 32,
         "per_row": 0.0,
         "subtotal": 0.0
       }
     ],
-    "total_payout": 0.0,
-    "net": -256.0
+    "total_payout": 36.0,
+    "net": -220.0
   },
   "evaluation_history": [
     {
@@ -1715,6 +1728,112 @@
         ],
         "total_payout": 0.0,
         "net": -256.0
+      }
+    },
+    {
+      "evaluated_at": "2026-09-06T20:21:04.876733+00:00",
+      "outcome": {
+        "evaluated_legs": 6,
+        "hits": 5,
+        "undecided_legs": 0,
+        "legs": [
+          {
+            "race_number": 2,
+            "status": "avgjort",
+            "winner_number": 4,
+            "winner_name": "Global History",
+            "chosen_numbers": [
+              4
+            ],
+            "hit": true
+          },
+          {
+            "race_number": 6,
+            "status": "avgjort",
+            "winner_number": 3,
+            "winner_name": "Young Danne",
+            "chosen_numbers": [
+              3,
+              5
+            ],
+            "hit": true
+          },
+          {
+            "race_number": 1,
+            "status": "avgjort",
+            "winner_number": 4,
+            "winner_name": "Izod Zet",
+            "chosen_numbers": [
+              4,
+              7
+            ],
+            "hit": true
+          },
+          {
+            "race_number": 5,
+            "status": "avgjort",
+            "winner_number": 9,
+            "winner_name": "Dorito Pellini",
+            "chosen_numbers": [
+              1,
+              4,
+              8,
+              10
+            ],
+            "hit": false
+          },
+          {
+            "race_number": 4,
+            "status": "avgjort",
+            "winner_number": 8,
+            "winner_name": "Call of the Wild",
+            "chosen_numbers": [
+              1,
+              6,
+              7,
+              12
+            ],
+            "hit": true,
+            "effective_chosen_numbers": [
+              1,
+              6,
+              7,
+              8
+            ],
+            "reserve_substitution_applied": true
+          },
+          {
+            "race_number": 3,
+            "status": "avgjort",
+            "winner_number": 3,
+            "winner_name": "Five Billion",
+            "chosen_numbers": [
+              3,
+              4,
+              5,
+              6
+            ],
+            "hit": true
+          }
+        ]
+      },
+      "payout": {
+        "breakdown": [
+          {
+            "level": 5,
+            "rows": 4,
+            "per_row": 9.0,
+            "subtotal": 36.0
+          },
+          {
+            "level": 4,
+            "rows": 32,
+            "per_row": 0.0,
+            "subtotal": 0.0
+          }
+        ],
+        "total_payout": 36.0,
+        "net": -220.0
       }
     }
   ]

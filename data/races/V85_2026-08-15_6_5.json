@@ -2030,5 +2030,124 @@
     ],
     "total_payout": 120.0,
     "net": -1032.0
-  }
+  },
+  "evaluation_history": [
+    {
+      "evaluated_at": "2026-09-06T20:22:55.462677+00:00",
+      "outcome": {
+        "evaluated_legs": 8,
+        "hits": 5,
+        "undecided_legs": 0,
+        "legs": [
+          {
+            "race_number": 10,
+            "status": "avgjort",
+            "winner_number": 5,
+            "winner_name": "Baron Tilly",
+            "chosen_numbers": [
+              2
+            ],
+            "hit": false
+          },
+          {
+            "race_number": 6,
+            "status": "avgjort",
+            "winner_number": 4,
+            "winner_name": "Jonte Godiva",
+            "chosen_numbers": [
+              4,
+              7
+            ],
+            "hit": true
+          },
+          {
+            "race_number": 12,
+            "status": "avgjort",
+            "winner_number": 7,
+            "winner_name": "Epic Kronos",
+            "chosen_numbers": [
+              5,
+              7
+            ],
+            "hit": true
+          },
+          {
+            "race_number": 7,
+            "status": "avgjort",
+            "winner_number": 12,
+            "winner_name": "Iaintnoquitter",
+            "chosen_numbers": [
+              1,
+              2,
+              9
+            ],
+            "hit": false
+          },
+          {
+            "race_number": 11,
+            "status": "avgjort",
+            "winner_number": 4,
+            "winner_name": "Gosa Gosing",
+            "chosen_numbers": [
+              1,
+              4,
+              7
+            ],
+            "hit": true
+          },
+          {
+            "race_number": 5,
+            "status": "avgjort",
+            "winner_number": 3,
+            "winner_name": "Ziva Bris",
+            "chosen_numbers": [
+              3,
+              9,
+              10,
+              11
+            ],
+            "hit": true
+          },
+          {
+            "race_number": 8,
+            "status": "avgjort",
+            "winner_number": 11,
+            "winner_name": "Chaplin",
+            "chosen_numbers": [
+              1,
+              3,
+              5,
+              12
+            ],
+            "hit": false
+          },
+          {
+            "race_number": 9,
+            "status": "avgjort",
+            "winner_number": 6,
+            "winner_name": "Steady Express",
+            "chosen_numbers": [
+              2,
+              3,
+              6,
+              12
+            ],
+            "hit": true
+          }
+        ]
+      },
+      "payout": {
+        "breakdown": [
+          {
+            "level": 5,
+            "rows": 12,
+            "per_row": 10.0,
+            "subtotal": 120.0
+          }
+        ],
+        "total_payout": 120.0,
+        "net": -1032.0
+      }
+    }
+  ]
 }

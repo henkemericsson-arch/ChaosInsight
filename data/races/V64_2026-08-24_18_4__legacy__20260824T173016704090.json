@@ -1842,6 +1842,92 @@
         "total_payout": 0.0,
         "net": -256.0
       }
+    },
+    {
+      "evaluated_at": "2026-09-06T20:20:05.576386+00:00",
+      "outcome": {
+        "evaluated_legs": 6,
+        "hits": 3,
+        "undecided_legs": 0,
+        "legs": [
+          {
+            "race_number": 4,
+            "status": "avgjort",
+            "winner_number": 2,
+            "winner_name": "Sherburne S.",
+            "chosen_numbers": [
+              2
+            ],
+            "hit": true
+          },
+          {
+            "race_number": 9,
+            "status": "avgjort",
+            "winner_number": 6,
+            "winner_name": "Listas Champagne",
+            "chosen_numbers": [
+              1,
+              2
+            ],
+            "hit": false
+          },
+          {
+            "race_number": 6,
+            "status": "avgjort",
+            "winner_number": 5,
+            "winner_name": "Northern Lights",
+            "chosen_numbers": [
+              4,
+              7
+            ],
+            "hit": false
+          },
+          {
+            "race_number": 5,
+            "status": "avgjort",
+            "winner_number": 3,
+            "winner_name": "Grodda Jet",
+            "chosen_numbers": [
+              1,
+              3,
+              6,
+              7
+            ],
+            "hit": true
+          },
+          {
+            "race_number": 7,
+            "status": "avgjort",
+            "winner_number": 1,
+            "winner_name": "Beart",
+            "chosen_numbers": [
+              1,
+              2,
+              3,
+              7
+            ],
+            "hit": true
+          },
+          {
+            "race_number": 8,
+            "status": "avgjort",
+            "winner_number": 5,
+            "winner_name": "Katmandu Mearas",
+            "chosen_numbers": [
+              1,
+              3,
+              4,
+              11
+            ],
+            "hit": false
+          }
+        ]
+      },
+      "payout": {
+        "breakdown": [],
+        "total_payout": 0.0,
+        "net": -256.0
+      }
     }
   ]
 }

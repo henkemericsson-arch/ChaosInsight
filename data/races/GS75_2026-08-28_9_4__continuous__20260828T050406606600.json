@@ -1911,6 +1911,105 @@
         "total_payout": 0.0,
         "net": -1024.0
       }
+    },
+    {
+      "evaluated_at": "2026-09-06T20:19:20.853479+00:00",
+      "outcome": {
+        "evaluated_legs": 7,
+        "hits": 3,
+        "undecided_legs": 0,
+        "legs": [
+          {
+            "race_number": 2,
+            "status": "avgjort",
+            "winner_number": 5,
+            "winner_name": "Hjalmar Xpress",
+            "chosen_numbers": [
+              2
+            ],
+            "hit": false
+          },
+          {
+            "race_number": 4,
+            "status": "avgjort",
+            "winner_number": 3,
+            "winner_name": "Hulte Sixten",
+            "chosen_numbers": [
+              5,
+              7
+            ],
+            "hit": false
+          },
+          {
+            "race_number": 3,
+            "status": "avgjort",
+            "winner_number": 9,
+            "winner_name": "Borups Eloh",
+            "chosen_numbers": [
+              1,
+              4
+            ],
+            "hit": false
+          },
+          {
+            "race_number": 6,
+            "status": "avgjort",
+            "winner_number": 10,
+            "winner_name": "Monsieur Chocolat",
+            "chosen_numbers": [
+              1,
+              2,
+              4,
+              10
+            ],
+            "hit": true
+          },
+          {
+            "race_number": 7,
+            "status": "avgjort",
+            "winner_number": 5,
+            "winner_name": "Tamacti Jun",
+            "chosen_numbers": [
+              2,
+              3,
+              4,
+              6
+            ],
+            "hit": false
+          },
+          {
+            "race_number": 5,
+            "status": "avgjort",
+            "winner_number": 1,
+            "winner_name": "Global Go Bajen Go",
+            "chosen_numbers": [
+              1,
+              3,
+              7,
+              9
+            ],
+            "hit": true
+          },
+          {
+            "race_number": 1,
+            "status": "avgjort",
+            "winner_number": 5,
+            "winner_name": "Jerome Zet",
+            "chosen_numbers": [
+              2,
+              3,
+              5,
+              6
+            ],
+            "hit": true
+          }
+        ]
+      },
+      "payout": {
+        "breakdown": [],
+        "total_payout": 0.0,
+        "net": -1024.0
+      }
     }
   ]
 }

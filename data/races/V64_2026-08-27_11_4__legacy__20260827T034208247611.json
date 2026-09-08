@@ -1890,6 +1890,92 @@
         "total_payout": 0.0,
         "net": -256.0
       }
+    },
+    {
+      "evaluated_at": "2026-09-06T20:20:28.311190+00:00",
+      "outcome": {
+        "evaluated_legs": 6,
+        "hits": 2,
+        "undecided_legs": 0,
+        "legs": [
+          {
+            "race_number": 6,
+            "status": "avgjort",
+            "winner_number": 4,
+            "winner_name": "Ride Away",
+            "chosen_numbers": [
+              5
+            ],
+            "hit": false
+          },
+          {
+            "race_number": 1,
+            "status": "avgjort",
+            "winner_number": 7,
+            "winner_name": "Suit Up Artist",
+            "chosen_numbers": [
+              2,
+              3
+            ],
+            "hit": false
+          },
+          {
+            "race_number": 3,
+            "status": "avgjort",
+            "winner_number": 7,
+            "winner_name": "Backwood Fiona",
+            "chosen_numbers": [
+              1,
+              9
+            ],
+            "hit": false
+          },
+          {
+            "race_number": 5,
+            "status": "avgjort",
+            "winner_number": 4,
+            "winner_name": "Marlon Boko",
+            "chosen_numbers": [
+              2,
+              3,
+              4,
+              10
+            ],
+            "hit": true
+          },
+          {
+            "race_number": 4,
+            "status": "avgjort",
+            "winner_number": 10,
+            "winner_name": "So Far So Good Zaz",
+            "chosen_numbers": [
+              1,
+              2,
+              6,
+              10
+            ],
+            "hit": true
+          },
+          {
+            "race_number": 2,
+            "status": "avgjort",
+            "winner_number": 8,
+            "winner_name": "Chianti L.A.",
+            "chosen_numbers": [
+              2,
+              3,
+              6,
+              7
+            ],
+            "hit": false
+          }
+        ]
+      },
+      "payout": {
+        "breakdown": [],
+        "total_payout": 0.0,
+        "net": -256.0
+      }
     }
   ]
 }

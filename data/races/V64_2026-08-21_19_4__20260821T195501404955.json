@@ -1309,7 +1309,14 @@
           4,
           5
         ],
-        "hit": true
+        "hit": true,
+        "effective_chosen_numbers": [
+          2,
+          4,
+          5,
+          6
+        ],
+        "reserve_substitution_applied": true
       },
       {
         "race_number": 4,
@@ -1343,5 +1350,113 @@
     ],
     "total_payout": 114.0,
     "net": -142.0
-  }
+  },
+  "evaluation_history": [
+    {
+      "evaluated_at": "2026-09-06T20:19:52.910911+00:00",
+      "outcome": {
+        "evaluated_legs": 6,
+        "hits": 5,
+        "undecided_legs": 0,
+        "legs": [
+          {
+            "race_number": 8,
+            "status": "avgjort",
+            "winner_number": 8,
+            "winner_name": "Trifli Vixi",
+            "chosen_numbers": [
+              4
+            ],
+            "hit": false
+          },
+          {
+            "race_number": 5,
+            "status": "avgjort",
+            "winner_number": 10,
+            "winner_name": "Green Peaks",
+            "chosen_numbers": [
+              5,
+              10
+            ],
+            "hit": true
+          },
+          {
+            "race_number": 7,
+            "status": "avgjort",
+            "winner_number": 3,
+            "winner_name": "Tactical",
+            "chosen_numbers": [
+              3,
+              11
+            ],
+            "hit": true
+          },
+          {
+            "race_number": 9,
+            "status": "avgjort",
+            "winner_number": 4,
+            "winner_name": "Osvaldo A.Boko",
+            "chosen_numbers": [
+              2,
+              4,
+              5,
+              10
+            ],
+            "hit": true
+          },
+          {
+            "race_number": 6,
+            "status": "avgjort",
+            "winner_number": 4,
+            "winner_name": "Gilmore Rice",
+            "chosen_numbers": [
+              1,
+              2,
+              4,
+              5
+            ],
+            "hit": true,
+            "effective_chosen_numbers": [
+              2,
+              4,
+              5,
+              6
+            ],
+            "reserve_substitution_applied": true
+          },
+          {
+            "race_number": 4,
+            "status": "avgjort",
+            "winner_number": 3,
+            "winner_name": "Hurricane Godiva",
+            "chosen_numbers": [
+              3,
+              6,
+              7,
+              8
+            ],
+            "hit": true
+          }
+        ]
+      },
+      "payout": {
+        "breakdown": [
+          {
+            "level": 5,
+            "rows": 1,
+            "per_row": 37.0,
+            "subtotal": 37.0
+          },
+          {
+            "level": 4,
+            "rows": 11,
+            "per_row": 7.0,
+            "subtotal": 77.0
+          }
+        ],
+        "total_payout": 114.0,
+        "net": -142.0
+      }
+    }
+  ]
 }

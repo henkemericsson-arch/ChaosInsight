@@ -1626,6 +1626,92 @@
         "total_payout": 0.0,
         "net": -256.0
       }
+    },
+    {
+      "evaluated_at": "2026-09-06T20:20:51.269967+00:00",
+      "outcome": {
+        "evaluated_legs": 6,
+        "hits": 3,
+        "undecided_legs": 0,
+        "legs": [
+          {
+            "race_number": 2,
+            "status": "avgjort",
+            "winner_number": 4,
+            "winner_name": "Global History",
+            "chosen_numbers": [
+              4
+            ],
+            "hit": true
+          },
+          {
+            "race_number": 6,
+            "status": "avgjort",
+            "winner_number": 3,
+            "winner_name": "Young Danne",
+            "chosen_numbers": [
+              3,
+              5
+            ],
+            "hit": true
+          },
+          {
+            "race_number": 5,
+            "status": "avgjort",
+            "winner_number": 9,
+            "winner_name": "Dorito Pellini",
+            "chosen_numbers": [
+              1,
+              10
+            ],
+            "hit": false
+          },
+          {
+            "race_number": 4,
+            "status": "avgjort",
+            "winner_number": 8,
+            "winner_name": "Call of the Wild",
+            "chosen_numbers": [
+              1,
+              2,
+              3,
+              7
+            ],
+            "hit": false
+          },
+          {
+            "race_number": 1,
+            "status": "avgjort",
+            "winner_number": 4,
+            "winner_name": "Izod Zet",
+            "chosen_numbers": [
+              4,
+              6,
+              7,
+              8
+            ],
+            "hit": true
+          },
+          {
+            "race_number": 3,
+            "status": "avgjort",
+            "winner_number": 3,
+            "winner_name": "Five Billion",
+            "chosen_numbers": [
+              4,
+              5,
+              6,
+              9
+            ],
+            "hit": false
+          }
+        ]
+      },
+      "payout": {
+        "breakdown": [],
+        "total_payout": 0.0,
+        "net": -256.0
+      }
     }
   ]
 }

@@ -13,6 +13,7 @@ class ResultParser:
     #
     def parse(self, race_data):
         status = race_data.get("status")
+
         if status != "results":
             #
             # Loppet är inte avgjort än.
@@ -28,7 +29,21 @@ class ResultParser:
             results.append({
                 "number": start.get("number"),
                 "name": start.get("horse", {}).get("name", ""),
-                "scratched": bool(start.get("out")),
+                #
+                # OBS: "scratched" ligger pa startens EGEN toppniva
+                # (syskon till "result"), INTE i result-dictet, och
+                # ar ett helt annat falt an "out" - "out" verkar
+                # snarare betyda nagot i stil med "kom inte i mal/
+                # galopperade/diskades", inte "struken". Bekraftat
+                # mot verklig ATG-rådata (2026-09-06, V85 Jägersro):
+                # en genuint struken hast hade "scratched": true och
+                # SAKNADE "out" helt, medan en hast som galopperade
+                # och diskades (men startade och sprang) hade
+                # "out": true men "scratched" osatt. Att tidigare
+                # lasa "out" har gett fel actual_scratched-varde i
+                # hela historikdatabasen.
+                #
+                "scratched": bool(start.get("scratched")),
                 "galloped": bool(result.get("galloped")),
                 "disqualified": bool(result.get("disqualified")),
                 "finish_order": result.get("finishOrder"),
@@ -45,6 +60,31 @@ class ResultParser:
             })
 
         return results
+
+    @staticmethod
+    def parse_scratchings_and_reserves(race_data, game_type):
+        #
+        # Extraherar strukningar och reservordning for loppet - pa
+        # LOPP-niva, inte per hast. Anvands av Learning Engine for
+        # att ratta hit/miss-berakningen nar en markerad hast blivit
+        # struken och automatiskt ersatts av nasta tillgangliga
+        # reserv enligt ATG:s regler.
+        #
+        # game_type: speltypen (t.ex. "V85") - reservordningen ligger
+        # under just den speltypens egen pool i rådata
+        # (race_data["pools"][game_type]["result"]["reserveOrder"]),
+        # inte lopp-generellt, sa ratt speltyp maste anges.
+        #
+        # Returnerar (scratchings, reserve_order) - bada tomma
+        # listor om nagot saknas, aldrig None (sa anropare slipper
+        # None-kontroller).
+        #
+        scratchings = (race_data.get("result") or {}).get("scratchings") or []
+
+        pool = (race_data.get("pools") or {}).get(game_type) or {}
+        reserve_order = (pool.get("result") or {}).get("reserveOrder") or []
+
+        return scratchings, reserve_order
 
     @staticmethod
     def _format_km_time(km_time):

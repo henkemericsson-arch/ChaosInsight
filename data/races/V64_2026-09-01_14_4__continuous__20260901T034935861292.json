@@ -1371,7 +1371,7 @@
   ],
   "outcome": {
     "evaluated_legs": 6,
-    "hits": 3,
+    "hits": 4,
     "undecided_legs": 0,
     "legs": [
       {
@@ -1430,7 +1430,14 @@
           4,
           7
         ],
-        "hit": false
+        "hit": true,
+        "effective_chosen_numbers": [
+          1,
+          4,
+          7,
+          10
+        ],
+        "reserve_substitution_applied": true
       },
       {
         "race_number": 1,
@@ -1448,9 +1455,16 @@
     ]
   },
   "payout": {
-    "breakdown": [],
-    "total_payout": 0.0,
-    "net": -256.0
+    "breakdown": [
+      {
+        "level": 4,
+        "rows": 8,
+        "per_row": 15.0,
+        "subtotal": 120.0
+      }
+    ],
+    "total_payout": 120.0,
+    "net": -136.0
   },
   "evaluation_history": [
     {
@@ -1537,6 +1551,106 @@
         "breakdown": [],
         "total_payout": 0.0,
         "net": -256.0
+      }
+    },
+    {
+      "evaluated_at": "2026-09-06T20:21:08.250979+00:00",
+      "outcome": {
+        "evaluated_legs": 6,
+        "hits": 4,
+        "undecided_legs": 0,
+        "legs": [
+          {
+            "race_number": 2,
+            "status": "avgjort",
+            "winner_number": 4,
+            "winner_name": "My D.X.One",
+            "chosen_numbers": [
+              4
+            ],
+            "hit": true
+          },
+          {
+            "race_number": 4,
+            "status": "avgjort",
+            "winner_number": 6,
+            "winner_name": "Orion",
+            "chosen_numbers": [
+              3,
+              6
+            ],
+            "hit": true
+          },
+          {
+            "race_number": 6,
+            "status": "avgjort",
+            "winner_number": 11,
+            "winner_name": "Allant Express",
+            "chosen_numbers": [
+              9,
+              10
+            ],
+            "hit": false
+          },
+          {
+            "race_number": 3,
+            "status": "avgjort",
+            "winner_number": 6,
+            "winner_name": "Perfect Gentleman",
+            "chosen_numbers": [
+              1,
+              2,
+              3,
+              7
+            ],
+            "hit": false
+          },
+          {
+            "race_number": 5,
+            "status": "avgjort",
+            "winner_number": 10,
+            "winner_name": "Iron Dice",
+            "chosen_numbers": [
+              1,
+              2,
+              4,
+              7
+            ],
+            "hit": true,
+            "effective_chosen_numbers": [
+              1,
+              4,
+              7,
+              10
+            ],
+            "reserve_substitution_applied": true
+          },
+          {
+            "race_number": 1,
+            "status": "avgjort",
+            "winner_number": 1,
+            "winner_name": "Freeman Dance",
+            "chosen_numbers": [
+              1,
+              2,
+              6,
+              7
+            ],
+            "hit": true
+          }
+        ]
+      },
+      "payout": {
+        "breakdown": [
+          {
+            "level": 4,
+            "rows": 8,
+            "per_row": 15.0,
+            "subtotal": 120.0
+          }
+        ],
+        "total_payout": 120.0,
+        "net": -136.0
       }
     }
   ]

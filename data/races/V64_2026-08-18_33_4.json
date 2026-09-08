@@ -1476,5 +1476,100 @@
     ],
     "total_payout": 14.0,
     "net": -242.0
-  }
+  },
+  "evaluation_history": [
+    {
+      "evaluated_at": "2026-09-06T20:19:45.189272+00:00",
+      "outcome": {
+        "evaluated_legs": 6,
+        "hits": 4,
+        "undecided_legs": 0,
+        "legs": [
+          {
+            "race_number": 7,
+            "status": "avgjort",
+            "winner_number": 7,
+            "winner_name": "Justin Bieber Sisu",
+            "chosen_numbers": [
+              1
+            ],
+            "hit": false
+          },
+          {
+            "race_number": 5,
+            "status": "avgjort",
+            "winner_number": 2,
+            "winner_name": "Nova Luce",
+            "chosen_numbers": [
+              1,
+              2
+            ],
+            "hit": true
+          },
+          {
+            "race_number": 6,
+            "status": "avgjort",
+            "winner_number": 4,
+            "winner_name": "Sauron",
+            "chosen_numbers": [
+              3,
+              10
+            ],
+            "hit": false
+          },
+          {
+            "race_number": 9,
+            "status": "avgjort",
+            "winner_number": 7,
+            "winner_name": "R.K.Sunshine",
+            "chosen_numbers": [
+              1,
+              3,
+              7,
+              9
+            ],
+            "hit": true
+          },
+          {
+            "race_number": 4,
+            "status": "avgjort",
+            "winner_number": 7,
+            "winner_name": "V.Viking",
+            "chosen_numbers": [
+              1,
+              3,
+              5,
+              7
+            ],
+            "hit": true
+          },
+          {
+            "race_number": 8,
+            "status": "avgjort",
+            "winner_number": 8,
+            "winner_name": "Guli Em",
+            "chosen_numbers": [
+              3,
+              4,
+              6,
+              8
+            ],
+            "hit": true
+          }
+        ]
+      },
+      "payout": {
+        "breakdown": [
+          {
+            "level": 4,
+            "rows": 2,
+            "per_row": 7.0,
+            "subtotal": 14.0
+          }
+        ],
+        "total_payout": 14.0,
+        "net": -242.0
+      }
+    }
+  ]
 }

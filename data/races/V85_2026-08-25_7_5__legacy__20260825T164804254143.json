@@ -2791,6 +2791,136 @@
         "total_payout": 132.0,
         "net": -1404.0
       }
+    },
+    {
+      "evaluated_at": "2026-09-06T20:23:38.369206+00:00",
+      "outcome": {
+        "evaluated_legs": 8,
+        "hits": 7,
+        "undecided_legs": 0,
+        "legs": [
+          {
+            "race_number": 6,
+            "status": "avgjort",
+            "winner_number": 4,
+            "winner_name": "Wise Guy",
+            "chosen_numbers": [
+              4
+            ],
+            "hit": true
+          },
+          {
+            "race_number": 11,
+            "status": "avgjort",
+            "winner_number": 4,
+            "winner_name": "Zarex",
+            "chosen_numbers": [
+              2,
+              4
+            ],
+            "hit": true
+          },
+          {
+            "race_number": 7,
+            "status": "avgjort",
+            "winner_number": 2,
+            "winner_name": "Golden Kronos",
+            "chosen_numbers": [
+              2,
+              4
+            ],
+            "hit": true
+          },
+          {
+            "race_number": 9,
+            "status": "avgjort",
+            "winner_number": 6,
+            "winner_name": "Readly Brodde",
+            "chosen_numbers": [
+              2,
+              6,
+              11
+            ],
+            "hit": true
+          },
+          {
+            "race_number": 10,
+            "status": "avgjort",
+            "winner_number": 10,
+            "winner_name": "Bonsse Garde",
+            "chosen_numbers": [
+              2,
+              3,
+              6,
+              9
+            ],
+            "hit": false
+          },
+          {
+            "race_number": 8,
+            "status": "avgjort",
+            "winner_number": 4,
+            "winner_name": "Peggy Boko",
+            "chosen_numbers": [
+              1,
+              2,
+              4,
+              7
+            ],
+            "hit": true
+          },
+          {
+            "race_number": 12,
+            "status": "avgjort",
+            "winner_number": 7,
+            "winner_name": "Carros First King",
+            "chosen_numbers": [
+              1,
+              2,
+              7,
+              8
+            ],
+            "hit": true
+          },
+          {
+            "race_number": 5,
+            "status": "avgjort",
+            "winner_number": 5,
+            "winner_name": "Mellby Narrow",
+            "chosen_numbers": [
+              1,
+              5,
+              6,
+              10
+            ],
+            "hit": true
+          }
+        ]
+      },
+      "payout": {
+        "breakdown": [
+          {
+            "level": 7,
+            "rows": 4,
+            "per_row": 33.0,
+            "subtotal": 132.0
+          },
+          {
+            "level": 6,
+            "rows": 52,
+            "per_row": 0.0,
+            "subtotal": 0.0
+          },
+          {
+            "level": 5,
+            "rows": 272,
+            "per_row": 0.0,
+            "subtotal": 0.0
+          }
+        ],
+        "total_payout": 132.0,
+        "net": -1404.0
+      }
     }
   ]
 }

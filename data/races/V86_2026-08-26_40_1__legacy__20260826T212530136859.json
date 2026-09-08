@@ -2212,6 +2212,137 @@
         "total_payout": 2943.0,
         "net": 1919.0
       }
+    },
+    {
+      "evaluated_at": "2026-09-06T20:31:29.335423+00:00",
+      "outcome": {
+        "evaluated_legs": 8,
+        "hits": 8,
+        "undecided_legs": 0,
+        "legs": [
+          {
+            "race_number": 4,
+            "status": "avgjort",
+            "winner_number": 2,
+            "winner_name": "Bright Star U.S.",
+            "chosen_numbers": [
+              2
+            ],
+            "hit": true
+          },
+          {
+            "race_number": 2,
+            "status": "avgjort",
+            "winner_number": 1,
+            "winner_name": "Mister Never Die",
+            "chosen_numbers": [
+              1,
+              2
+            ],
+            "hit": true
+          },
+          {
+            "race_number": 8,
+            "status": "avgjort",
+            "winner_number": 10,
+            "winner_name": "Mohawk",
+            "chosen_numbers": [
+              2,
+              10
+            ],
+            "hit": true
+          },
+          {
+            "race_number": 3,
+            "status": "avgjort",
+            "winner_number": 10,
+            "winner_name": "Pauhunri Boko",
+            "chosen_numbers": [
+              1,
+              5,
+              7,
+              10
+            ],
+            "hit": true
+          },
+          {
+            "race_number": 7,
+            "status": "avgjort",
+            "winner_number": 5,
+            "winner_name": "Gasparito",
+            "chosen_numbers": [
+              1,
+              2,
+              5,
+              9
+            ],
+            "hit": true
+          },
+          {
+            "race_number": 6,
+            "status": "avgjort",
+            "winner_number": 12,
+            "winner_name": "Mackenzie Bro",
+            "chosen_numbers": [
+              2,
+              3,
+              5,
+              12
+            ],
+            "hit": true
+          },
+          {
+            "race_number": 5,
+            "status": "avgjort",
+            "winner_number": 5,
+            "winner_name": "Hans Palema",
+            "chosen_numbers": [
+              1,
+              2,
+              5,
+              8
+            ],
+            "hit": true
+          },
+          {
+            "race_number": 1,
+            "status": "avgjort",
+            "winner_number": 3,
+            "winner_name": "Express Jab",
+            "chosen_numbers": [
+              2,
+              3,
+              5,
+              7
+            ],
+            "hit": true
+          }
+        ]
+      },
+      "payout": {
+        "breakdown": [
+          {
+            "level": 8,
+            "rows": 1,
+            "per_row": 2348.0,
+            "subtotal": 2348.0
+          },
+          {
+            "level": 7,
+            "rows": 17,
+            "per_row": 35.0,
+            "subtotal": 595.0
+          },
+          {
+            "level": 6,
+            "rows": 121,
+            "per_row": 0.0,
+            "subtotal": 0.0
+          }
+        ],
+        "total_payout": 2943.0,
+        "net": 1919.0
+      }
     }
   ]
 }

@@ -2323,7 +2323,14 @@
           11,
           12
         ],
-        "hit": true
+        "hit": true,
+        "effective_chosen_numbers": [
+          1,
+          4,
+          5,
+          12
+        ],
+        "reserve_substitution_applied": true
       },
       {
         "race_number": 4,
@@ -2450,6 +2457,139 @@
               12
             ],
             "hit": true
+          },
+          {
+            "race_number": 4,
+            "status": "avgjort",
+            "winner_number": 2,
+            "winner_name": "Charente Bro",
+            "chosen_numbers": [
+              2,
+              3,
+              4,
+              6
+            ],
+            "hit": true
+          },
+          {
+            "race_number": 5,
+            "status": "avgjort",
+            "winner_number": 4,
+            "winner_name": "Gunpoint",
+            "chosen_numbers": [
+              1,
+              2,
+              4,
+              8
+            ],
+            "hit": true
+          },
+          {
+            "race_number": 8,
+            "status": "avgjort",
+            "winner_number": 15,
+            "winner_name": "Gaudi Laksmy",
+            "chosen_numbers": [
+              1,
+              2,
+              3,
+              13,
+              15
+            ],
+            "hit": true
+          }
+        ]
+      },
+      "payout": {
+        "breakdown": [
+          {
+            "level": 7,
+            "rows": 1,
+            "per_row": 650.0,
+            "subtotal": 650.0
+          },
+          {
+            "level": 6,
+            "rows": 18,
+            "per_row": 59.0,
+            "subtotal": 1062.0
+          }
+        ],
+        "total_payout": 1712.0,
+        "net": 432.0
+      }
+    },
+    {
+      "evaluated_at": "2026-09-06T20:28:58.012026+00:00",
+      "outcome": {
+        "evaluated_legs": 8,
+        "hits": 7,
+        "undecided_legs": 0,
+        "legs": [
+          {
+            "race_number": 3,
+            "status": "avgjort",
+            "winner_number": 6,
+            "winner_name": "Giotto Grif",
+            "chosen_numbers": [
+              2
+            ],
+            "hit": false
+          },
+          {
+            "race_number": 6,
+            "status": "avgjort",
+            "winner_number": 12,
+            "winner_name": "Diva Ek",
+            "chosen_numbers": [
+              8,
+              12
+            ],
+            "hit": true
+          },
+          {
+            "race_number": 2,
+            "status": "avgjort",
+            "winner_number": 3,
+            "winner_name": "Global Gratitude",
+            "chosen_numbers": [
+              3,
+              4
+            ],
+            "hit": true
+          },
+          {
+            "race_number": 7,
+            "status": "avgjort",
+            "winner_number": 4,
+            "winner_name": "Just for Show",
+            "chosen_numbers": [
+              4,
+              5,
+              7,
+              10
+            ],
+            "hit": true
+          },
+          {
+            "race_number": 1,
+            "status": "avgjort",
+            "winner_number": 4,
+            "winner_name": "I'm Still Standing",
+            "chosen_numbers": [
+              1,
+              4,
+              11,
+              12
+            ],
+            "hit": true,
+            "effective_chosen_numbers": [
+              1,
+              4,
+              5,
+              12
+            ],
+            "reserve_substitution_applied": true
           },
           {
             "race_number": 4,

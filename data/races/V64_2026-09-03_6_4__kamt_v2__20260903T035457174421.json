@@ -1488,6 +1488,316 @@
       ]
     }
   ],
-  "outcome": null,
-  "payout": null
+  "outcome": {
+    "evaluated_legs": 6,
+    "hits": 3,
+    "undecided_legs": 0,
+    "legs": [
+      {
+        "race_number": 1,
+        "status": "avgjort",
+        "winner_number": 7,
+        "winner_name": "Gaudi Laksmy",
+        "chosen_numbers": [
+          7
+        ],
+        "hit": true
+      },
+      {
+        "race_number": 2,
+        "status": "avgjort",
+        "winner_number": 5,
+        "winner_name": "Polly Vici",
+        "chosen_numbers": [
+          3,
+          5
+        ],
+        "hit": true
+      },
+      {
+        "race_number": 3,
+        "status": "avgjort",
+        "winner_number": 5,
+        "winner_name": "Queen Gold",
+        "chosen_numbers": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12
+        ],
+        "hit": true,
+        "effective_chosen_numbers": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          11,
+          12
+        ],
+        "reserve_substitution_applied": true
+      },
+      {
+        "race_number": 4,
+        "status": "avgjort",
+        "winner_number": 4,
+        "winner_name": "Fatal Attraction",
+        "chosen_numbers": [
+          1,
+          2,
+          3,
+          5
+        ],
+        "hit": false
+      },
+      {
+        "race_number": 5,
+        "status": "avgjort",
+        "winner_number": 1,
+        "winner_name": "Jist on Light Boy",
+        "chosen_numbers": [
+          7,
+          11
+        ],
+        "hit": false
+      },
+      {
+        "race_number": 6,
+        "status": "avgjort",
+        "winner_number": 6,
+        "winner_name": "Henessi Otan",
+        "chosen_numbers": [
+          2,
+          3,
+          8,
+          9,
+          11
+        ],
+        "hit": false
+      }
+    ]
+  },
+  "payout": {
+    "breakdown": [],
+    "total_payout": 0.0,
+    "net": -960.0
+  },
+  "evaluation_history": [
+    {
+      "evaluated_at": "2026-09-04T00:23:59.919420+00:00",
+      "outcome": {
+        "evaluated_legs": 6,
+        "hits": 3,
+        "undecided_legs": 0,
+        "legs": [
+          {
+            "race_number": 1,
+            "status": "avgjort",
+            "winner_number": 7,
+            "winner_name": "Gaudi Laksmy",
+            "chosen_numbers": [
+              7
+            ],
+            "hit": true
+          },
+          {
+            "race_number": 2,
+            "status": "avgjort",
+            "winner_number": 5,
+            "winner_name": "Polly Vici",
+            "chosen_numbers": [
+              3,
+              5
+            ],
+            "hit": true
+          },
+          {
+            "race_number": 3,
+            "status": "avgjort",
+            "winner_number": 5,
+            "winner_name": "Queen Gold",
+            "chosen_numbers": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8,
+              9,
+              10,
+              11,
+              12
+            ],
+            "hit": true
+          },
+          {
+            "race_number": 4,
+            "status": "avgjort",
+            "winner_number": 4,
+            "winner_name": "Fatal Attraction",
+            "chosen_numbers": [
+              1,
+              2,
+              3,
+              5
+            ],
+            "hit": false
+          },
+          {
+            "race_number": 5,
+            "status": "avgjort",
+            "winner_number": 1,
+            "winner_name": "Jist on Light Boy",
+            "chosen_numbers": [
+              7,
+              11
+            ],
+            "hit": false
+          },
+          {
+            "race_number": 6,
+            "status": "avgjort",
+            "winner_number": 6,
+            "winner_name": "Henessi Otan",
+            "chosen_numbers": [
+              2,
+              3,
+              8,
+              9,
+              11
+            ],
+            "hit": false
+          }
+        ]
+      },
+      "payout": {
+        "breakdown": [],
+        "total_payout": 0.0,
+        "net": -960.0
+      }
+    },
+    {
+      "evaluated_at": "2026-09-06T20:21:51.008402+00:00",
+      "outcome": {
+        "evaluated_legs": 6,
+        "hits": 3,
+        "undecided_legs": 0,
+        "legs": [
+          {
+            "race_number": 1,
+            "status": "avgjort",
+            "winner_number": 7,
+            "winner_name": "Gaudi Laksmy",
+            "chosen_numbers": [
+              7
+            ],
+            "hit": true
+          },
+          {
+            "race_number": 2,
+            "status": "avgjort",
+            "winner_number": 5,
+            "winner_name": "Polly Vici",
+            "chosen_numbers": [
+              3,
+              5
+            ],
+            "hit": true
+          },
+          {
+            "race_number": 3,
+            "status": "avgjort",
+            "winner_number": 5,
+            "winner_name": "Queen Gold",
+            "chosen_numbers": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8,
+              9,
+              10,
+              11,
+              12
+            ],
+            "hit": true,
+            "effective_chosen_numbers": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8,
+              9,
+              11,
+              12
+            ],
+            "reserve_substitution_applied": true
+          },
+          {
+            "race_number": 4,
+            "status": "avgjort",
+            "winner_number": 4,
+            "winner_name": "Fatal Attraction",
+            "chosen_numbers": [
+              1,
+              2,
+              3,
+              5
+            ],
+            "hit": false
+          },
+          {
+            "race_number": 5,
+            "status": "avgjort",
+            "winner_number": 1,
+            "winner_name": "Jist on Light Boy",
+            "chosen_numbers": [
+              7,
+              11
+            ],
+            "hit": false
+          },
+          {
+            "race_number": 6,
+            "status": "avgjort",
+            "winner_number": 6,
+            "winner_name": "Henessi Otan",
+            "chosen_numbers": [
+              2,
+              3,
+              8,
+              9,
+              11
+            ],
+            "hit": false
+          }
+        ]
+      },
+      "payout": {
+        "breakdown": [],
+        "total_payout": 0.0,
+        "net": -960.0
+      }
+    }
+  ]
 }

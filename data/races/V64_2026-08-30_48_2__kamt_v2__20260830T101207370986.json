@@ -367,6 +367,31 @@
         "total_payout": 0.0,
         "net": -1.0
       }
+    },
+    {
+      "evaluated_at": "2026-09-06T20:20:44.875468+00:00",
+      "outcome": {
+        "evaluated_legs": 1,
+        "hits": 0,
+        "undecided_legs": 0,
+        "legs": [
+          {
+            "race_number": 4,
+            "status": "avgjort",
+            "winner_number": 5,
+            "winner_name": "Grab The Moment",
+            "chosen_numbers": [
+              1
+            ],
+            "hit": false
+          }
+        ]
+      },
+      "payout": {
+        "breakdown": [],
+        "total_payout": 0.0,
+        "net": -1.0
+      }
     }
   ]
 }
