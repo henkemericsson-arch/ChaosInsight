@@ -15,9 +15,27 @@ class RaceParser:
 
         for index, race_data in enumerate(raw_races, start=1):
             track_data = race_data.get("track") or {}
+
+            #
+            # Strukna hästar (redan strukna vid genereringstillfället)
+            # ska aldrig bli ett val i ett nytt system - de kan
+            # rimligen inte vinna. Filtreras bort redan här, sa att
+            # ingen konsument (SystemGenerator, RaceAnalyzer,
+            # ChaosEngine, CrowdEngine, kaosvärdesberäkning) behöver
+            # hantera det separat, och fältstorleken (t.ex. "12
+            # hästar") speglar korrekt hur många som faktiskt kan
+            # vinna.
+            #
+            # OBS: detta är skilt från reservsubstitutionen i
+            # Learning Engine, som hanterar det MOTSATTA fallet - en
+            # häst som blir struken EFTER att ett system redan
+            # sparats. Den logiken rör aldrig denna filtrering, och
+            # denna filtrering rör aldrig den.
+            #
             horses = [
                 horse_parser.parse(start)
                 for start in race_data.get("starts", [])
+                if not start.get("scratched")
             ]
 
             race = Race(
