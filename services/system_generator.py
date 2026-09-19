@@ -193,9 +193,19 @@ class SystemGenerator:
     def _find_favorite(horses):
         #
         # Marknadens favorit i loppet - den lagst-oddsade hasten.
-        # None om ingen hast i loppet har oddsdata alls.
+        # None om ingen hast i loppet har GILTIGA oddsdata.
         #
-        with_odds = [h for h in horses if h.odds is not None]
+        # OBS: odds <= 0 racknas som ogiltig/saknad data, INTE som
+        # ett riktigt, extremt lagt oddsvarde - riktiga decimalodds
+        # ar alltid > 0 (i praktiken alltid > 1.0). ATG rapporterar
+        # ibland 0.0 for hastar med i praktiken obefintligt
+        # spelintresse (upptackt 2026-09-19, V85: tva hastar med
+        # odds=0.0 i samma lopp) - utan detta filter skulle en
+        # sadan korrupt nolla felaktigt utses till "favorit" bara
+        # for att 0 ar numeriskt lagst, och tranga undan den
+        # riktiga favoriten fran favoritskyddet helt.
+        #
+        with_odds = [h for h in horses if h.odds is not None and h.odds > 0]
         if not with_odds:
             return None
         return min(with_odds, key=lambda h: h.odds)
@@ -225,10 +235,18 @@ class SystemGenerator:
             horses, key=lambda h: h.get_metric("total_score"), reverse=True
         )
 
+        #
+        # OBS: odds <= 0 racknas som ogiltig/saknad data, samma
+        # skal som i _find_favorite - annars kan en enda korrupt
+        # nolla ("odds": 0.0) forstora hela favoritmarginalen for
+        # ALLA hastar i loppet (margin blir 0, sa ingen riktig
+        # favorit nagonsin kvalificerar sig som kontender).
+        #
         with_odds = sorted(
-            (h for h in horses if h.odds is not None), key=lambda h: h.odds
+            (h for h in horses if h.odds is not None and h.odds > 0),
+            key=lambda h: h.odds,
         )
-        without_odds = [h for h in horses if h.odds is None]
+        without_odds = [h for h in horses if h.odds is None or h.odds <= 0]
 
         if with_odds:
             best_odds = with_odds[0].odds
