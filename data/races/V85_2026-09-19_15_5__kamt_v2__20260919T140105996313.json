@@ -2270,6 +2270,257 @@
       ]
     }
   ],
-  "outcome": null,
-  "payout": null
+  "outcome": {
+    "evaluated_legs": 8,
+    "hits": 4,
+    "undecided_legs": 0,
+    "legs": [
+      {
+        "race_number": 1,
+        "status": "avgjort",
+        "winner_number": 2,
+        "winner_name": "Mohawk",
+        "chosen_numbers": [
+          3,
+          4,
+          12
+        ],
+        "hit": true,
+        "effective_chosen_numbers": [
+          2,
+          3,
+          4
+        ],
+        "reserve_substitution_applied": true
+      },
+      {
+        "race_number": 2,
+        "status": "avgjort",
+        "winner_number": 5,
+        "winner_name": "Nilla Lane",
+        "chosen_numbers": [
+          6,
+          10
+        ],
+        "hit": false
+      },
+      {
+        "race_number": 3,
+        "status": "avgjort",
+        "winner_number": 7,
+        "winner_name": "Lotusorchide",
+        "chosen_numbers": [
+          1,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          14,
+          15
+        ],
+        "hit": true
+      },
+      {
+        "race_number": 4,
+        "status": "avgjort",
+        "winner_number": 9,
+        "winner_name": "Tordenskjold",
+        "chosen_numbers": [
+          3,
+          6,
+          7
+        ],
+        "hit": false
+      },
+      {
+        "race_number": 5,
+        "status": "avgjort",
+        "winner_number": 1,
+        "winner_name": "Fedorov",
+        "chosen_numbers": [
+          1,
+          4,
+          11
+        ],
+        "hit": true
+      },
+      {
+        "race_number": 6,
+        "status": "avgjort",
+        "winner_number": 4,
+        "winner_name": "Cold Blaze",
+        "chosen_numbers": [
+          4
+        ],
+        "hit": true
+      },
+      {
+        "race_number": 7,
+        "status": "avgjort",
+        "winner_number": 3,
+        "winner_name": "Barack Face",
+        "chosen_numbers": [
+          4,
+          9
+        ],
+        "hit": false
+      },
+      {
+        "race_number": 8,
+        "status": "avgjort",
+        "winner_number": 8,
+        "winner_name": "Weekend Vibe",
+        "chosen_numbers": [
+          3,
+          4,
+          5,
+          7,
+          12,
+          15
+        ],
+        "hit": false
+      }
+    ]
+  },
+  "payout": {
+    "breakdown": [],
+    "total_payout": 0.0,
+    "net": -4536.0
+  },
+  "evaluation_history": [
+    {
+      "evaluated_at": "2026-09-19T16:21:47.682660+00:00",
+      "outcome": {
+        "evaluated_legs": 8,
+        "hits": 4,
+        "undecided_legs": 0,
+        "legs": [
+          {
+            "race_number": 1,
+            "status": "avgjort",
+            "winner_number": 2,
+            "winner_name": "Mohawk",
+            "chosen_numbers": [
+              3,
+              4,
+              12
+            ],
+            "hit": true,
+            "effective_chosen_numbers": [
+              2,
+              3,
+              4
+            ],
+            "reserve_substitution_applied": true
+          },
+          {
+            "race_number": 2,
+            "status": "avgjort",
+            "winner_number": 5,
+            "winner_name": "Nilla Lane",
+            "chosen_numbers": [
+              6,
+              10
+            ],
+            "hit": false
+          },
+          {
+            "race_number": 3,
+            "status": "avgjort",
+            "winner_number": 7,
+            "winner_name": "Lotusorchide",
+            "chosen_numbers": [
+              1,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8,
+              9,
+              10,
+              11,
+              12,
+              13,
+              14,
+              15
+            ],
+            "hit": true
+          },
+          {
+            "race_number": 4,
+            "status": "avgjort",
+            "winner_number": 9,
+            "winner_name": "Tordenskjold",
+            "chosen_numbers": [
+              3,
+              6,
+              7
+            ],
+            "hit": false
+          },
+          {
+            "race_number": 5,
+            "status": "avgjort",
+            "winner_number": 1,
+            "winner_name": "Fedorov",
+            "chosen_numbers": [
+              1,
+              4,
+              11
+            ],
+            "hit": true
+          },
+          {
+            "race_number": 6,
+            "status": "avgjort",
+            "winner_number": 4,
+            "winner_name": "Cold Blaze",
+            "chosen_numbers": [
+              4
+            ],
+            "hit": true
+          },
+          {
+            "race_number": 7,
+            "status": "avgjort",
+            "winner_number": 3,
+            "winner_name": "Barack Face",
+            "chosen_numbers": [
+              4,
+              9
+            ],
+            "hit": false
+          },
+          {
+            "race_number": 8,
+            "status": "avgjort",
+            "winner_number": 8,
+            "winner_name": "Weekend Vibe",
+            "chosen_numbers": [
+              3,
+              4,
+              5,
+              7,
+              12,
+              15
+            ],
+            "hit": false
+          }
+        ]
+      },
+      "payout": {
+        "breakdown": [],
+        "total_payout": 0.0,
+        "net": -4536.0
+      }
+    }
+  ]
 }

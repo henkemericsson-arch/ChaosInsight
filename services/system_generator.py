@@ -80,11 +80,10 @@ class SystemGenerator:
         row_price = ROW_PRICES.get(game_type, DEFAULT_ROW_PRICE)
 
         #
-        # Rangordna lopp efter deras marknadsfavorits Total Score -
-        # avgor vilka lopp som blir spik/las. Lopp utan oddsdata
-        # alls (extremt ovanligt) hamnar sist i prioritetsordningen,
-        # sorterade pa kaosvarde, och far ingen favoritgaranti
-        # eftersom det da inte finns nagon favorit att identifiera.
+        # SPIK: rangordna lopp efter deras marknadsfavorits Total
+        # Score - avgor vilka lopp som blir spikade. Lopp utan
+        # oddsdata alls (extremt ovanligt) hamnar sist i
+        # prioritetsordningen, sorterade pa kaosvarde.
         #
         races_with_favorite = []
         races_without_favorite = []
@@ -102,12 +101,11 @@ class SystemGenerator:
         )
         races_without_favorite.sort(key=lambda r: getattr(r, "kaosvarde", 0))
 
-        priority_list = list(races_with_favorite)
-        priority_list += [(race, None) for race in races_without_favorite]
+        spike_priority_list = list(races_with_favorite)
+        spike_priority_list += [(race, None) for race in races_without_favorite]
 
-        spike_entries = priority_list[:spikes]
-        lock_entries = priority_list[spikes:spikes + locks]
-        remaining_entries = priority_list[spikes + locks:]
+        spike_entries = spike_priority_list[:spikes]
+        races_after_spikes = [race for race, _ in spike_priority_list[spikes:]]
 
         leg_selections = []
 
@@ -129,26 +127,51 @@ class SystemGenerator:
 
             leg_selections.append({"race": race, "horses": chosen})
 
-        for race, favorite in lock_entries:
-            ranked_horses = sorted(
-                race.horses,
-                key=lambda h: h.get_metric("total_score"),
-                reverse=True,
-            )
+        #
+        # LAS: samma princip som spik, men med TVA favoriter per
+        # lopp (de tva lagst-oddsade hastarna) istallet for en.
+        # Rangordnas efter SUMMAN av bada favoriternas Total Score
+        # - de lopp (bland de som inte redan spikats) dar paret har
+        # starkast sammanlagt analysstod blir last.
+        #
+        races_with_pair = []
+        races_without_pair = []
 
-            if favorite is not None:
-                #
-                # Las: favoriten garanterat med, plus basta ovriga
-                # hast efter Total Score.
-                #
-                others = [h for h in ranked_horses if h.number != favorite.number]
-                chosen = [favorite] + others[:1]
+        for race in races_after_spikes:
+            pair = self._find_top_two_by_odds(race.horses)
+            if pair is not None:
+                summed_score = sum(h.get_metric("total_score") or 0 for h in pair)
+                races_with_pair.append((race, pair, summed_score))
             else:
+                races_without_pair.append(race)
+
+        races_with_pair.sort(key=lambda triple: triple[2], reverse=True)
+        races_without_pair.sort(key=lambda r: getattr(r, "kaosvarde", 0))
+
+        lock_priority_list = [(race, pair) for race, pair, _ in races_with_pair]
+        lock_priority_list += [(race, None) for race in races_without_pair]
+
+        lock_entries = lock_priority_list[:locks]
+        remaining_races = [race for race, _ in lock_priority_list[locks:]]
+
+        for race, pair in lock_entries:
+            if pair is not None:
+                #
+                # Las: de tva favoriterna (lagst odds) i det lopp
+                # dar paret har starkast sammanlagt Total Score
+                # jamfort med ovriga aterstaende lopps par.
+                #
+                chosen = pair
+            else:
+                ranked_horses = sorted(
+                    race.horses,
+                    key=lambda h: h.get_metric("total_score"),
+                    reverse=True,
+                )
                 chosen = ranked_horses[:2]
 
             leg_selections.append({"race": race, "horses": chosen})
 
-        remaining_races = [race for race, _ in remaining_entries]
         remaining_races_sorted = sorted(
             remaining_races, key=lambda r: getattr(r, "kaosvarde", 0)
         )
@@ -209,6 +232,48 @@ class SystemGenerator:
         if not with_odds:
             return None
         return min(with_odds, key=lambda h: h.odds)
+
+    @staticmethod
+    def _find_top_two_by_odds(horses):
+        #
+        # De tva lagst-oddsade hastarna i loppet ("de tva
+        # favoriterna") - anvands for LAS, samma princip som
+        # _find_favorite men med tva hastar istallet for en.
+        #
+        # Om bara EN hast har giltiga oddsdata: den hasten
+        # garanteras, och den andra platsen fylls av basta ovriga
+        # hast efter Total Score (samma gracefulla nedgradering som
+        # tidigare, bara for den ovanliga situationen dar faltet har
+        # oddsdata for endast en hast).
+        #
+        # None om INGEN hast i loppet har giltiga oddsdata alls -
+        # da faller anroparen tillbaka pa ren Total Score-ranking.
+        #
+        with_odds = sorted(
+            (h for h in horses if h.odds is not None and h.odds > 0),
+            key=lambda h: h.odds,
+        )
+
+        if len(with_odds) >= 2:
+            return with_odds[:2]
+
+        if len(with_odds) == 1:
+            favorite = with_odds[0]
+            #
+            # Exkludera aven hastar med ogiltig odds (t.ex. en
+            # struken hast som av nagon anledning anda nadde hit)
+            # fran fyllnadsurvalet - annars kan samma problem som
+            # for sjalva favoritdetekteringen smyga in har istallet.
+            #
+            ranked_horses = sorted(
+                (h for h in horses if h.odds is None or h.odds > 0),
+                key=lambda h: h.get_metric("total_score"),
+                reverse=True,
+            )
+            others = [h for h in ranked_horses if h.number != favorite.number]
+            return [favorite] + others[:1]
+
+        return None
 
     def _coverage_continuous(self, kaosvarde):
         min_coverage, max_coverage = self.BASE_COVERAGE_RANGE
