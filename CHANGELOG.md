@@ -1,5 +1,11 @@
 # Chaos Insight
 
+## Unreleased
+
+- Strukna hästar filtreras bort redan vid parsning (RaceParser) och odds 0 behandlas som struken i SystemGenerator.
+- Lås väljs nu som de två främsta favoriterna enligt odds, rankade på summan av deras Total Score (samma princip som spikar).
+- KAMT v2: hästar utan sannolikhet från RaceAnalyzer tappas inte längre, de får ett lågt standardvärde så att favoriter alltid kan bli spik, lås eller gardering.
+
 ## Version 0.5.0
 **Status:** Klar
 

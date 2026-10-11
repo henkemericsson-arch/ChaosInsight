@@ -111,6 +111,13 @@ class ShadowRace:
         )
 
 
+#
+# Hur stor andel av loppets lägsta simulerade sannolikhet en häst
+# utan egen sannolikhet får (se build_shadow_races).
+#
+MISSING_PROBABILITY_FACTOR = 0.5
+
+
 def build_shadow_races(races, predictions_by_race):
     #
     # Bygger ShadowRace/ShadowHorse fran de riktiga loppens
@@ -126,11 +133,29 @@ def build_shadow_races(races, predictions_by_race):
         if not probabilities:
             continue
 
+        #
+        # En häst som RaceAnalyzer inte kunde simulera (t.ex. saknar
+        # historik) får ett lågt standardvärde i stället för att
+        # tappas - annars kan en tydlig favorit försvinna ur loppet
+        # och aldrig bli spik/lås/gardering. Den hamnar sist i
+        # Total Score-rankingen, men favorit-logiken (odds) hittar
+        # den ändå.
+        #
+        default_probability = (
+            min(probabilities.values()) * MISSING_PROBABILITY_FACTOR
+        )
+
         shadow_horses = []
         for horse in race.horses:
             probability = probabilities.get(horse.number)
+
             if probability is None:
-                continue
+                if horse.odds is not None and horse.odds <= 0:
+                    #
+                    # Odds 0 = struken häst, ska inte med.
+                    #
+                    continue
+                probability = default_probability
 
             shadow_horse = ShadowHorse.from_real_horse(horse)
             shadow_horse.set_metric("total_score", probability)
