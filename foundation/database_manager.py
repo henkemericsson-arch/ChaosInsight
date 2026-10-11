@@ -89,6 +89,17 @@ class DatabaseManager:
     # Lasvagar - flyttade oforandrade fran historical_stats.py
     # ------------------------------------------------------------
 
+    def observations_for_analysis(self):
+        #
+        # Alla observationsrader som dicts, för Learning Engines
+        # analysmoduler (learning/). Ren läsning - ingen filtrering
+        # eller tolkning sker här, det görs i analyslagret.
+        #
+        cursor = self._conn.execute("SELECT * FROM observations")
+        columns = [c[0] for c in cursor.description]
+        return [dict(zip(columns, row)) for row in cursor.fetchall()]
+
+
     @staticmethod
     def _parse_km_time_seconds(km_time_str):
         #

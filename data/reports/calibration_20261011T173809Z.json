@@ -1,0 +1,644 @@
+{
+  "alla lopp": {
+    "n_races_total": 299,
+    "field_conflicts": 44,
+    "models": [
+      "kamt_v1",
+      "kamt_v2"
+    ],
+    "summary": {
+      "kamt_v1": {
+        "n_races": 299,
+        "n_horses": 3213,
+        "brier": 0.08060850922184941,
+        "log_loss": 2.0780709166396356,
+        "top1": 0.3612040133779264,
+        "top2": 0.5652173913043478,
+        "top3": 0.68561872909699,
+        "mean_winner_probability": 0.1354229348977434,
+        "winner_rank_distribution": {
+          "6+": 48,
+          "1": 108,
+          "4": 24,
+          "2": 61,
+          "5": 22,
+          "3": 36
+        }
+      },
+      "kamt_v2": {
+        "n_races": 172,
+        "n_horses": 1855,
+        "brier": 0.0920957188071541,
+        "log_loss": 2.6953003371645,
+        "top1": 0.19767441860465115,
+        "top2": 0.29069767441860467,
+        "top3": 0.43023255813953487,
+        "mean_winner_probability": 0.1483140464072661,
+        "winner_rank_distribution": {
+          "4": 19,
+          "3": 24,
+          "5": 16,
+          "2": 16,
+          "1": 34,
+          "6+": 63
+        }
+      },
+      "market_odds": {
+        "n_races": 263,
+        "n_horses": 2825,
+        "brier": 0.07436933346715116,
+        "log_loss": 1.795332230852966,
+        "top1": 0.38783269961977185,
+        "top2": 0.5741444866920152,
+        "top3": 0.688212927756654,
+        "mean_winner_probability": 0.21824318654728866,
+        "winner_rank_distribution": {
+          "3": 30,
+          "1": 102,
+          "2": 49,
+          "6+": 32,
+          "4": 33,
+          "5": 17
+        }
+      },
+      "market_streck": {
+        "n_races": 297,
+        "n_horses": 3189,
+        "brier": 0.0737815899111367,
+        "log_loss": 1.7674410538005632,
+        "top1": 0.3771043771043771,
+        "top2": 0.5757575757575758,
+        "top3": 0.696969696969697,
+        "mean_winner_probability": 0.2574987268251471,
+        "winner_rank_distribution": {
+          "3": 36,
+          "1": 112,
+          "2": 59,
+          "6+": 37,
+          "4": 29,
+          "5": 24
+        }
+      }
+    },
+    "reliability": {
+      "kamt_v1": [
+        {
+          "low": 0.0,
+          "high": 0.05,
+          "n": 196,
+          "mean_predicted": 0.04032849272975245,
+          "actual_rate": 0.02040816326530612
+        },
+        {
+          "low": 0.05,
+          "high": 0.1,
+          "n": 1994,
+          "mean_predicted": 0.07584280824309392,
+          "actual_rate": 0.04012036108324975
+        },
+        {
+          "low": 0.1,
+          "high": 0.2,
+          "n": 949,
+          "mean_predicted": 0.12809373038199012,
+          "actual_rate": 0.18545837723919917
+        },
+        {
+          "low": 0.2,
+          "high": 0.3,
+          "n": 65,
+          "mean_predicted": 0.23212163938405447,
+          "actual_rate": 0.5384615384615384
+        },
+        {
+          "low": 0.3,
+          "high": 0.4,
+          "n": 7,
+          "mean_predicted": 0.33014790360744756,
+          "actual_rate": 0.5714285714285714
+        },
+        {
+          "low": 0.4,
+          "high": 0.5,
+          "n": 2,
+          "mean_predicted": 0.45258188525746557,
+          "actual_rate": 0.5
+        },
+        {
+          "low": 0.5,
+          "high": 1.0,
+          "n": 0,
+          "mean_predicted": null,
+          "actual_rate": null
+        }
+      ],
+      "kamt_v2": [
+        {
+          "low": 0.0,
+          "high": 0.05,
+          "n": 937,
+          "mean_predicted": 0.016881310255154113,
+          "actual_rate": 0.06937033084311633
+        },
+        {
+          "low": 0.05,
+          "high": 0.1,
+          "n": 358,
+          "mean_predicted": 0.07310724304234383,
+          "actual_rate": 0.0893854748603352
+        },
+        {
+          "low": 0.1,
+          "high": 0.2,
+          "n": 313,
+          "mean_predicted": 0.13875015233628493,
+          "actual_rate": 0.10862619808306709
+        },
+        {
+          "low": 0.2,
+          "high": 0.3,
+          "n": 121,
+          "mean_predicted": 0.24075164779913033,
+          "actual_rate": 0.10743801652892562
+        },
+        {
+          "low": 0.3,
+          "high": 0.4,
+          "n": 60,
+          "mean_predicted": 0.34693187166389056,
+          "actual_rate": 0.2
+        },
+        {
+          "low": 0.4,
+          "high": 0.5,
+          "n": 29,
+          "mean_predicted": 0.43709242733634407,
+          "actual_rate": 0.2413793103448276
+        },
+        {
+          "low": 0.5,
+          "high": 1.0,
+          "n": 37,
+          "mean_predicted": 0.6475264736276255,
+          "actual_rate": 0.24324324324324326
+        }
+      ],
+      "market_odds": [
+        {
+          "low": 0.0,
+          "high": 0.05,
+          "n": 1343,
+          "mean_predicted": 0.025090624038122622,
+          "actual_rate": 0.01712583767684289
+        },
+        {
+          "low": 0.05,
+          "high": 0.1,
+          "n": 592,
+          "mean_predicted": 0.07095204536482674,
+          "actual_rate": 0.06587837837837837
+        },
+        {
+          "low": 0.1,
+          "high": 0.2,
+          "n": 541,
+          "mean_predicted": 0.14047010662019446,
+          "actual_rate": 0.14972273567467653
+        },
+        {
+          "low": 0.2,
+          "high": 0.3,
+          "n": 197,
+          "mean_predicted": 0.24433814653276822,
+          "actual_rate": 0.2639593908629442
+        },
+        {
+          "low": 0.3,
+          "high": 0.4,
+          "n": 84,
+          "mean_predicted": 0.34684511427234527,
+          "actual_rate": 0.4166666666666667
+        },
+        {
+          "low": 0.4,
+          "high": 0.5,
+          "n": 44,
+          "mean_predicted": 0.4457900862546587,
+          "actual_rate": 0.45454545454545453
+        },
+        {
+          "low": 0.5,
+          "high": 1.0,
+          "n": 24,
+          "mean_predicted": 0.6008743799275563,
+          "actual_rate": 0.5833333333333334
+        }
+      ]
+    },
+    "comparisons": [
+      {
+        "a": "kamt_v1",
+        "b": "market_odds",
+        "n_races": 263,
+        "mean_delta_log_loss": 0.28494462234748186,
+        "ci95": [
+          0.21164931177642476,
+          0.35373074061833887
+        ],
+        "verdict": "kamt_v1 sämre än market_odds"
+      },
+      {
+        "a": "kamt_v1",
+        "b": "market_streck",
+        "n_races": 297,
+        "mean_delta_log_loss": 0.30864301217326934,
+        "ci95": [
+          0.20803647634582823,
+          0.4070415157445894
+        ],
+        "verdict": "kamt_v1 sämre än market_streck"
+      },
+      {
+        "a": "kamt_v2",
+        "b": "market_odds",
+        "n_races": 149,
+        "mean_delta_log_loss": 0.9277106238199965,
+        "ci95": [
+          0.6794466494498929,
+          1.1988511650380824
+        ],
+        "verdict": "kamt_v2 sämre än market_odds"
+      },
+      {
+        "a": "kamt_v2",
+        "b": "market_streck",
+        "n_races": 170,
+        "mean_delta_log_loss": 0.9124076890629776,
+        "ci95": [
+          0.6611839634796816,
+          1.174252752665652
+        ],
+        "verdict": "kamt_v2 sämre än market_streck"
+      },
+      {
+        "a": "kamt_v1",
+        "b": "kamt_v2",
+        "n_races": 172,
+        "mean_delta_log_loss": -0.5892006844947406,
+        "ci95": [
+          -0.822052603485665,
+          -0.3571803602378762
+        ],
+        "verdict": "kamt_v1 bättre än kamt_v2"
+      }
+    ],
+    "segments": {
+      "kamt_v1": [
+        {
+          "dimension": "track",
+          "value": "Bergen",
+          "n_races": 6,
+          "top1_model": 0.5,
+          "top1_market": 0.5,
+          "log_loss_model": 1.5555833067761011,
+          "log_loss_market": 1.3807048922858751
+        },
+        {
+          "dimension": "track",
+          "value": "Bergsåker",
+          "n_races": 15,
+          "top1_model": 0.4,
+          "top1_market": 0.13333333333333333,
+          "log_loss_model": 2.016688206294232,
+          "log_loss_market": 2.001439048261093
+        },
+        {
+          "dimension": "track",
+          "value": "Bjerke",
+          "n_races": 6,
+          "top1_model": 0.5,
+          "top1_market": 0.8333333333333334,
+          "log_loss_model": 2.1125997498505016,
+          "log_loss_market": 1.3153842982239592
+        },
+        {
+          "dimension": "track",
+          "value": "Boden",
+          "n_races": 10,
+          "top1_model": 0.3,
+          "top1_market": 0.4,
+          "log_loss_model": 2.277010590154404,
+          "log_loss_market": 1.7823371370297643
+        },
+        {
+          "dimension": "track",
+          "value": "Charlottenlund",
+          "n_races": 8,
+          "top1_model": 0.625,
+          "top1_market": 0.5,
+          "log_loss_model": 2.045488983597814,
+          "log_loss_market": 1.8458361982451452
+        },
+        {
+          "dimension": "track",
+          "value": "Eskilstuna",
+          "n_races": 11,
+          "top1_model": 0.36363636363636365,
+          "top1_market": 0.36363636363636365,
+          "log_loss_model": 2.0040024348339354,
+          "log_loss_market": 1.7657457350387744
+        },
+        {
+          "dimension": "track",
+          "value": "Färjestad",
+          "n_races": 17,
+          "top1_model": 0.23529411764705882,
+          "top1_market": 0.23529411764705882,
+          "log_loss_model": 2.1767893481378304,
+          "log_loss_market": 1.7504900157144399
+        },
+        {
+          "dimension": "track",
+          "value": "Gävle",
+          "n_races": 7,
+          "top1_model": 0.14285714285714285,
+          "top1_market": 0.14285714285714285,
+          "log_loss_model": 2.238540483620473,
+          "log_loss_market": 2.173174923785109
+        },
+        {
+          "dimension": "track",
+          "value": "Hagmyren",
+          "n_races": 15,
+          "top1_model": 0.5333333333333333,
+          "top1_market": 0.5333333333333333,
+          "log_loss_model": 2.117717121527301,
+          "log_loss_market": 1.62647424054912
+        },
+        {
+          "dimension": "track",
+          "value": "Halmstad",
+          "n_races": 6,
+          "top1_model": 0.3333333333333333,
+          "top1_market": 0.5,
+          "log_loss_model": 1.8251492129572207,
+          "log_loss_market": 1.434730103207376
+        },
+        {
+          "dimension": "track",
+          "value": "Jägersro",
+          "n_races": 32,
+          "top1_model": 0.25,
+          "top1_market": 0.25,
+          "log_loss_model": 2.153885735990745,
+          "log_loss_market": 1.9289925512788633
+        },
+        {
+          "dimension": "track",
+          "value": "Romme",
+          "n_races": 14,
+          "top1_model": 0.35714285714285715,
+          "top1_market": 0.5,
+          "log_loss_model": 1.9145800075440846,
+          "log_loss_market": 1.7567151821285913
+        },
+        {
+          "dimension": "track",
+          "value": "Skellefteå",
+          "n_races": 6,
+          "top1_model": 0.5,
+          "top1_market": 0.5,
+          "log_loss_model": 2.2354432001783184,
+          "log_loss_market": 2.1358586925006375
+        },
+        {
+          "dimension": "track",
+          "value": "Solvalla",
+          "n_races": 52,
+          "top1_model": 0.36538461538461536,
+          "top1_market": 0.4423076923076923,
+          "log_loss_model": 2.0961712262416223,
+          "log_loss_market": 1.788645097784002
+        },
+        {
+          "dimension": "track",
+          "value": "Solänget",
+          "n_races": 6,
+          "top1_model": 0.0,
+          "top1_market": 0.0,
+          "log_loss_model": 2.4500653325492365,
+          "log_loss_market": 2.269871859836089
+        },
+        {
+          "dimension": "track",
+          "value": "Tingsryd",
+          "n_races": 7,
+          "top1_model": 0.42857142857142855,
+          "top1_market": 0.42857142857142855,
+          "log_loss_model": 1.9847258125883653,
+          "log_loss_market": 1.787292659031261
+        },
+        {
+          "dimension": "track",
+          "value": "Åby",
+          "n_races": 26,
+          "top1_model": 0.4230769230769231,
+          "top1_market": 0.4230769230769231,
+          "log_loss_model": 2.0190331062736835,
+          "log_loss_market": 1.7825503872869035
+        },
+        {
+          "dimension": "track",
+          "value": "Örebro",
+          "n_races": 8,
+          "top1_model": 0.5,
+          "top1_market": 0.625,
+          "log_loss_model": 2.0717419636449725,
+          "log_loss_market": 1.5524936817736639
+        },
+        {
+          "dimension": "distance_class",
+          "value": "kort <=1700 m",
+          "n_races": 53,
+          "top1_model": 0.37735849056603776,
+          "top1_market": 0.41509433962264153,
+          "log_loss_model": 1.9832137962566583,
+          "log_loss_market": 1.7418668408635254
+        },
+        {
+          "dimension": "distance_class",
+          "value": "lång >2300 m",
+          "n_races": 48,
+          "top1_model": 0.2916666666666667,
+          "top1_market": 0.2708333333333333,
+          "log_loss_model": 2.222174391380748,
+          "log_loss_market": 1.9099748146992728
+        },
+        {
+          "dimension": "distance_class",
+          "value": "medel 1701-2300",
+          "n_races": 162,
+          "top1_model": 0.3765432098765432,
+          "top1_market": 0.41358024691358025,
+          "log_loss_model": 2.0699883358261664,
+          "log_loss_market": 1.778855821253075
+        },
+        {
+          "dimension": "start_method",
+          "value": "auto",
+          "n_races": 210,
+          "top1_model": 0.37142857142857144,
+          "top1_market": 0.4095238095238095,
+          "log_loss_model": 2.042089258345963,
+          "log_loss_market": 1.7350001653527158
+        },
+        {
+          "dimension": "start_method",
+          "value": "volte",
+          "n_races": 53,
+          "top1_model": 0.32075471698113206,
+          "top1_market": 0.3018867924528302,
+          "log_loss_model": 2.231586191303123,
+          "log_loss_market": 2.034383811136976
+        }
+      ],
+      "kamt_v2": [
+        {
+          "dimension": "track",
+          "value": "Charlottenlund",
+          "n_races": 6,
+          "top1_model": 0.16666666666666666,
+          "top1_market": 0.3333333333333333,
+          "log_loss_model": 2.315134166326668,
+          "log_loss_market": 2.119363914386638
+        },
+        {
+          "dimension": "track",
+          "value": "Eskilstuna",
+          "n_races": 8,
+          "top1_model": 0.375,
+          "top1_market": 0.5,
+          "log_loss_model": 2.0759081310532,
+          "log_loss_market": 1.5369624894486107
+        },
+        {
+          "dimension": "track",
+          "value": "Färjestad",
+          "n_races": 14,
+          "top1_model": 0.07142857142857142,
+          "top1_market": 0.21428571428571427,
+          "log_loss_model": 3.3300678476249597,
+          "log_loss_market": 1.7221327702203355
+        },
+        {
+          "dimension": "track",
+          "value": "Gävle",
+          "n_races": 6,
+          "top1_model": 0.0,
+          "top1_market": 0.16666666666666666,
+          "log_loss_model": 2.261750007161132,
+          "log_loss_market": 2.185409581766931
+        },
+        {
+          "dimension": "track",
+          "value": "Hagmyren",
+          "n_races": 13,
+          "top1_model": 0.38461538461538464,
+          "top1_market": 0.46153846153846156,
+          "log_loss_model": 3.245262817795263,
+          "log_loss_market": 1.7924790806160233
+        },
+        {
+          "dimension": "track",
+          "value": "Jägersro",
+          "n_races": 21,
+          "top1_model": 0.0,
+          "top1_market": 0.23809523809523808,
+          "log_loss_model": 3.128942116158988,
+          "log_loss_market": 1.9908463914858952
+        },
+        {
+          "dimension": "track",
+          "value": "Romme",
+          "n_races": 6,
+          "top1_model": 0.3333333333333333,
+          "top1_market": 0.5,
+          "log_loss_model": 1.947986363108879,
+          "log_loss_market": 1.9486496353120681
+        },
+        {
+          "dimension": "track",
+          "value": "Solvalla",
+          "n_races": 32,
+          "top1_model": 0.1875,
+          "top1_market": 0.40625,
+          "log_loss_model": 2.9397721495752305,
+          "log_loss_market": 1.8605347823553202
+        },
+        {
+          "dimension": "track",
+          "value": "Åby",
+          "n_races": 19,
+          "top1_model": 0.21052631578947367,
+          "top1_market": 0.3684210526315789,
+          "log_loss_model": 2.634618443061548,
+          "log_loss_market": 1.76452788117939
+        },
+        {
+          "dimension": "track",
+          "value": "Örebro",
+          "n_races": 7,
+          "top1_model": 0.42857142857142855,
+          "top1_market": 0.7142857142857143,
+          "log_loss_model": 2.3227125498446783,
+          "log_loss_market": 1.4632750800619563
+        },
+        {
+          "dimension": "distance_class",
+          "value": "kort <=1700 m",
+          "n_races": 23,
+          "top1_model": 0.043478260869565216,
+          "top1_market": 0.391304347826087,
+          "log_loss_model": 2.8600540895817783,
+          "log_loss_market": 1.7576124619322429
+        },
+        {
+          "dimension": "distance_class",
+          "value": "lång >2300 m",
+          "n_races": 30,
+          "top1_model": 0.26666666666666666,
+          "top1_market": 0.23333333333333334,
+          "log_loss_model": 2.725685394461949,
+          "log_loss_market": 2.094224413802558
+        },
+        {
+          "dimension": "distance_class",
+          "value": "medel 1701-2300",
+          "n_races": 96,
+          "top1_model": 0.21875,
+          "top1_market": 0.4166666666666667,
+          "log_loss_model": 2.734852789388622,
+          "log_loss_market": 1.756426788415097
+        },
+        {
+          "dimension": "start_method",
+          "value": "auto",
+          "n_races": 120,
+          "top1_model": 0.20833333333333334,
+          "top1_market": 0.39166666666666666,
+          "log_loss_model": 2.80546318114562,
+          "log_loss_market": 1.7553806291889535
+        },
+        {
+          "dimension": "start_method",
+          "value": "volte",
+          "n_races": 29,
+          "top1_model": 0.1724137931034483,
+          "top1_market": 0.3103448275862069,
+          "log_loss_model": 2.5324859288990598,
+          "log_loss_market": 2.111141904265283
+        }
+      ]
+    }
+  }
+}
