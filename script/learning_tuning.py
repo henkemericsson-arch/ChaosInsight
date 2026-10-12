@@ -18,17 +18,7 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from foundation.database_manager import DatabaseManager
-from learning.trav.tuning_adapter import TravTuningAdapter, tuning_settings
-from learning.tuning.parameter_store import ParameterStore
-from learning.tuning.tuner import Tuner
-from learning.tuning.tuning_log import TuningLog
-
-
-def build_tuner():
-    db = DatabaseManager()
-    adapter = TravTuningAdapter(db.observations_for_analysis)
-    return Tuner(ParameterStore(db), TuningLog(db), adapter, tuning_settings()), db
+from learning.trav.tuning_factory import build_tuner
 
 
 def _ver(version):

@@ -21,6 +21,8 @@
 
 ## Version 0.5.1
 
+- Automatisk justering kopplad till utvärderingen (etapp 4b): Learning Engine kör återrullningskontroll och justering i bakgrunden efter varje utvärdering när automatiken är påslagen (AV som standard). Se 005 §18.9.
+
 - Automatisk justering (etapp 4): dämpad, skyddad parameterjustering med återrullning (learning/tuning), AV som standard. Se 005 §18.
 
 ## Version 0.5.0

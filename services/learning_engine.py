@@ -1,5 +1,6 @@
 import json
 from foundation.run_info import dump_metrics
+from learning.trav.auto_hook import after_evaluation
 import os
 from datetime import datetime, timezone
 
@@ -150,6 +151,12 @@ class LearningEngine:
             json.dump(prediction, f, ensure_ascii=False, indent=2)
 
         self._print_report(prediction, outcome)
+
+        #
+        # Automatisk justering (005 avsnitt 18.9): gör ingenting om den
+        # är avstängd, körs i egen tråd och kan aldrig påverka utvärderingen.
+        #
+        after_evaluation()
         return outcome
 
     def _fetch_reserve_info(self, game_id, game_type):

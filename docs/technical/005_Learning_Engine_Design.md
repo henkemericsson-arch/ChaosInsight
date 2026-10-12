@@ -280,4 +280,179 @@ Nästa: etapp 2a (regression på delmåtten) kan göras först när det finns ti
 
 ### 15.1 Expertindex (förtydligande)
 
-`expert_index` är tomt för att expertdelen ännu inte är byggd, inte på grund av en loggningsbugg. Enligt 003 är experttips en separat komponent (`experttips`, EXPERT-vikt 5 i Crowd) och källorna ska ligga i en egen modul (`config/expert_sources.py`); `app.py` anropar `ExpertAnalyzer.collect_tips()/apply()`. Loggningen ändrar inget där: delmåtten sparas bara om de finns i `horse.metrics`, och inget skrivs för `expert_index` om modulen inte satt det. När expertmodulen byggs behöver den en egen design (källor, insamling, tolkning till per-häst-signal, point-in-time-loggning) – ej beslutad.
+`expert_index` är tomt för att expertdelen ännu inte är byggd, inte på grund av en loggningsbugg. Enligt 003 är experttips en separat komponent (`experttips`, EXPERT-vikt 5 i Crowd) och källorna ska ligga i en egen modul (`config/expert_sources.py`); `app.py` anropar `ExpertAnalyzer.collect_tips()/apply()`. Loggningen ändrar inget där: delmåtten sparas bara om de finns i `horse.metrics`, och inget skrivs för `expert_index` om modulen inte satt det. Expertmodulen är sedan byggd enligt `006_Expert_Module_Design.md`; indexet loggas som `expert_index_obs` (observe-only) tills Learning Engine visat att det tillför något.
+
+## 16. Parameterlager (steg 5 i leveransordningen, byggt)
+
+Mål: flytta alla justerbara vikter ur koden till en versionerad parameteruppsättning, så att Learning Engine (etapp 4) senare kan föreslå, anta, rulla tillbaka och återställa dem utan kodändringar. **Ingen beteendeändring:** med baseline (version 0) ger systemet exakt samma Total Score som före ändringen.
+
+### 16.1 Arkitektur
+
+```
+Analysis Engine (Crowd/Chaos) och ScoreEngine
+        │  läser vikter
+        ▼
+ParameterProvider  ── ögonblicksbild av aktiv uppsättning (aldrig SQL i motorerna)
+        │
+        ▼
+ParameterStore  ── versionering, baseline, status
+        │
+        ▼
+DatabaseManager (tabellen parameter_sets i Knowledge Base)
+```
+
+- `learning/tuning/parameter_store.py` – `ParameterStore`: skapar baseline (version 0, oföränderlig), lägger till nya versioner (`add`), ändrar status (`set_status`, aldrig på version 0), hämtar aktiv uppsättning. All SQL går via `DatabaseManager`.
+- `learning/tuning/parameter_provider.py` – `ParameterProvider`: läser aktiv uppsättning till en oföränderlig ögonblicksbild (`ParameterSet`) och ger `value(namn)`, `group(prefix)` och `version`. Saknas tabellen eller går läsningen fel används baseline, så systemet fungerar som förut. `refresh()` läser om; `app.py` anropar den i början av varje spelanalys.
+- `learning/trav/parameter_schema.py` – de travspecifika parametrarna och deras baseline-värden (adapterlagret; den generella koden i `learning/tuning/` känner inte till något travspecifikt). `learning/trav/parameters.py` ger standardprovidern.
+- Tabell `parameter_sets`: `version | created_at | parent | status (baseline|active|rejected|rolled_back) | params (JSON) | reason | evidence (JSON)`. Aktiv uppsättning = senaste versionen med status `active`, annars baseline.
+
+### 16.2 Parametrar (första omgången)
+
+| Grupp | Namn (baseline) |
+|---|---|
+| crowd | odds 20, streck 10, trend 10, expert 5 |
+| chaos | start_position 8, driver_form 8, horse_form 10, trainer_form 5, distance 5, track_condition 4, gallop_risk 5, tempo 5 |
+| score | crowd 0,50, chaos 0,50 |
+
+Klassernas konstanter (`CrowdEngine.ODDS_WEIGHT` m.fl.) tas bort; baseline finns på ett ställe (schemat). KAMT v2:s kopplingskoefficienter och garderingsparametrarna läggs till i ett senare steg (se avsnitt 4).
+
+### 16.3 Versionsstämpel
+
+- `parameter_version` sparas i varje prediktionsfil och i `observations` (ny kolumn, `migrate_schema`), så att utfall alltid kan hållas isär per parameteruppsättning.
+- Utvärderingar använder den uppsättning systemet hade när det genererades (regimlogiken i avsnitt 3b gäller `code_version` och `parameter_version` tillsammans).
+
+### 16.4 Delpoäng per häst (förutsättning för etapp 2a)
+
+Luckan som avsnitt 3 pekade ut åtgärdas här. Motorerna sparar nu varje delpoäng som ett mått på hästen, och eftersom hela `horse.metrics` loggas (avsnitt 15) hamnar de i `metrics_json` utan fler ändringar:
+
+- Crowd: `crowd_odds_score`, `crowd_streck_score`, `crowd_trend_score` (när trend finns); expert loggas som `expert_index_obs` (eller `expert_index` när den är aktiv).
+- Chaos: `chaos_start_position_score`, `chaos_driver_form_score`, `chaos_horse_form_score`, `chaos_trainer_form_score`, `chaos_distance_score`, `chaos_track_condition_score`, `chaos_gallop_risk_score`, `chaos_tempo_score` samt `data_coverage_n` (antal av 8 komponenter med riktig historik; saknad komponent har fått neutralt värde 50, vilket regressionen ska se som modellen såg det).
+- Äldre loggade lopp saknar delpoängen och kan inte återskapas.
+
+### 16.5 Verktyg
+
+`script/learning_parameters.py` visar aktiv uppsättning, alla versioner och skapar baseline vid behov. Ändrar inget annat.
+
+### 16.6 Testkrav
+
+Ekvivalens: med baseline ska `crowd_index`, `chaos_index` och `total_score` vara identiska med före ändringen för samma indata. Dessutom: en ändrad uppsättning ger förväntad effekt, saknad tabell ger baseline, och version 0 går inte att ändra.
+
+Nästa: etapp 2a (viktanalys) när det finns tillräckligt många utvärderade lopp med delpoäng; sedan etapp 4 (guard, adjuster, rollback, reset).
+
+## 17. Etapp 2a – viktanalys (byggd)
+
+Svarar på tre frågor, utan att ändra något i systemet:
+
+1. Vilka delsignaler förklarar faktiskt vem som vinner?
+2. Slår anpassade vikter dagens Total Score på nyare lopp som modellen inte sett?
+3. Tillför expertindexet något *utöver* dagens Total Score?
+
+### 17.1 Modell
+
+Ett lopp har exakt en vinnare, så rätt modell är en **conditional logit**: sannolikheten att häst *i* vinner är `exp(β·x_i) / Σ_j exp(β·x_j)` över hästarna i loppet, där `x` är hästens delpoäng (de mått som sedan avsnitt 16.4 loggas i `metrics_json`). Anpassas med Newton–Raphson och en liten ridge-straffterm (`WEIGHT_RIDGE`), på standardiserade delpoäng så att koefficienterna går att jämföra. Ren Python, inga externa bibliotek.
+
+Delpoäng som används (alla 0–100): `crowd_odds_score`, `crowd_streck_score`, `crowd_trend_score`, samt de åtta `chaos_*_score`. Saknad trend (loppet saknar trenddata) ersätts med neutralt 50, som i Crowd-beräkningen när trend finns men hästen saknar värdet. Lopp där någon häst saknar någon delpoäng (äldre lopp, före avsnitt 16) räknas inte med och redovisas som bortfall.
+
+### 17.2 Jämförelse mot nuvarande modell (walk-forward)
+
+- Loppen sorteras på datum. De äldsta 70 % är träning, de nyaste 30 % test (aldrig slumpmässig uppdelning – framtiden får inte läcka in).
+- **Nuvarande modell** = den loggade Total Score, omvandlad till sannolikhet med en temperatur `τ` som anpassas på träningsdelen (`softmax(τ · Total Score)`). Det är samma sak som modellen faktiskt använde.
+- **Anpassad modell** = conditional logit tränad på träningsdelen.
+- Mått: medel-log-loss per lopp på testdelen. Skillnaden (anpassad − nuvarande) får ett bootstrap-konfidensintervall över testloppen.
+- **Verdikt:** anpassade vikter räknas bara som bättre om hela intervallet ligger under 0 (motsvarar skyddsräcke 3 och 6 i avsnitt 5). Annars: "ingen påvisad förbättring".
+
+### 17.3 Koefficienter och förslag
+
+- Slutlig anpassning på alla lopp. Konfidensintervall per koefficient med bootstrap över lopp (varm start från hela anpassningen).
+- Koefficienter jämförs med nuvarande effektiva vikter. Nuvarande effektiv vikt för signal *j* = `score.<grupp> · vikt_j / summa(gruppens vikter)` (Crowd räknas med trend, utan expert).
+- **Förslag i parametrarnas termer** (travadaptern, `learning/trav/weight_features.py`): negativa koefficienter sätts till 0; `score.crowd`/`score.chaos` sätts efter respektive grupps andel av summan; vikterna inom gruppen sätts proportionellt mot koefficienterna men behåller gruppens nuvarande summa. Mappningen är testad åt båda hållen (nuvarande parametrar → koefficienter → samma parametrar). Förslaget är **information**; inget skrivs till parameterlagret (det är etapp 4:s uppgift, med skyddsräcken).
+
+### 17.4 Expertindexets mervärde
+
+Frågan är om `expert_index_obs` tillför information bortom Total Score. Modellen blir `softmax(τ · Total Score + γ · expert)` med `τ` fast från avsnitt 17.2 och en enda fri koefficient `γ` (per 10 indexpoäng). Redovisas med bootstrap-konfidensintervall för `γ` och för förbättringen i log-loss per lopp. Bara lopp där expertindex finns för alla hästar används. Slutsatsen "tillför information" kräver att *både* intervallet för `γ` och intervallet för förbättringen i log-loss ligger helt över 0; bara det förra ger "antydan, ej belagt". Först då finns skäl att aktivera indexet (`EXPERT_INDEX_ACTIVE`, se 006) – och även då är det ett beslut för etapp 4:s skyddsräcken.
+
+### 17.5 Underlag och tröskelvärden
+
+- Under `WEIGHT_MIN_RACES_REPORT` (40) lopp redovisas bara antalet; ingen anpassning görs.
+- Under `MIN_RACES_FOR_TUNING` (300, avsnitt 5) märks hela rapporten **preliminär**.
+- Lopp redovisas per `parameter_version` och `code_version`; blandas flera versioner varnar rapporten (regimerna i avsnitt 3b). `--parameter-version` begränsar analysen till en uppsättning.
+
+### 17.6 Filer
+
+`learning/analysis/weight_analysis.py` (generell kärna: anpassning, walk-forward, bootstrap, mervärdestest – känner inte till trav), `learning/analysis/weight_report.py` (textrapport), `learning/trav/weight_features.py` (vilka mått som är signaler, koppling till parametrar), `learning/trav/settings.py` (trösklar `WEIGHT_MIN_RACES_REPORT`, `WEIGHT_RIDGE`, `WEIGHT_BOOTSTRAP`; läggs dit av `script/patch_weight_analysis.py`), `script/learning_weight_report.py` (CLI, läser bara).
+
+Nästa: etapp 4 (guard, adjuster, rollback, reset) använder förslaget från denna rapport som kandidat – först när underlaget räcker.
+
+### 17.7 Test och körtid
+
+Testad på syntetiska lopp med känd sanning: kända vikter återfinns inom konfidensintervallen, anpassade vikter slår nuvarande bara när nuvarande är fel (ingen falsk förbättring när nuvarande modell är sanningen), expertprovet ger inga fler falsklarm än nominella 5 % på ren brusdata, och en körning mot en syntetisk databas går hela vägen (bortfall, flera versioner, preliminärmärkning, JSON-rapport). Körtiden är några sekunder för hundratals lopp; antalet bootstrap-omtagningar styrs av `--boot` (förval 60).
+
+## 18. Etapp 4 – automatisk justering med skyddsräcken (byggd, avstängd som standard)
+
+Etapp 4 genomför avsnitt 4–5. Den **levereras avstängd** (`auto_enabled = 0`) och ändrar inget förrän användaren slår på den. Även påslagen gör den ingenting förrän alla skyddsräcken är uppfyllda. Med `--dry-run` visas vad som skulle hända utan att något skrivs.
+
+### 18.1 Principer
+
+- **Delpoängen är oberoende av vikterna.** Eftersom varje delpoäng loggas (avsnitt 16.4) går nuvarande modells poäng och en kandidats poäng att räkna om på samma lopp: `poäng = Σ effektiv_vikt_j · delpoäng_j`. Därför kan lopp gjorda med olika parameteruppsättningar användas tillsammans. Det som får blanda sig är inte vikterna utan *signalernas definition* – det är regimen i avsnitt 3b (`settings.REGIMES`): bara lopp från aktuell regim används.
+- **Oberoende verifiering.** `adjuster` bygger kandidaten; `guard` kontrollerar den separat och får veto. Ingen kandidat antas om någon kontroll faller.
+- **Ändrar bara det som är beslutat:** Crowd-, Chaos- och Score-vikterna (avsnitt 16.2). `crowd.expert` rörs inte (expertindexet är observe-only, se 006). Allt annat – garderingsparametrar, KAMT v2-koefficienter – är senare, separata beslut.
+
+### 18.2 Flödet (`run`)
+
+1. **Avstängd?** Då avslutas körningen (utom `--dry-run`).
+2. **Underlag:** avgjorda KAMT v1-lopp i aktuell regim med alla delpoäng (som i avsnitt 17).
+3. **Skyddsräcke 1 och 7 (data och avkylning):** minst `TUNING_MIN_RACES` (300) lopp totalt och minst `TUNING_MIN_NEW_RACES` (100) lopp *efter* senaste antagna justering. Faller något: ingen kandidat byggs.
+4. **Kandidat (skyddsräcke 2, 4, 5):** loppen delas i tid, äldsta 70 % tränar. Conditional logit på träningsdelen ger föreslagna vikter (samma mappning som avsnitt 17.3). Sedan: *dämpning* `ny = gammal + η·(föreslagen − gammal)` med η = `TUNING_DAMPING` (0,2), *stegtak* ±`TUNING_STEP_CAP` (10 %) relativt gällande värde, och *totalt tak* ±`TUNING_TOTAL_CAP` (50 %) relativt baseline. `score.crowd + score.chaos` hålls lika med 1 och båda följer takten. Beräkningen sker alltid på hela historiken i batch, aldrig på senaste loppet.
+5. **Skyddsräcke 3 och 6 (statistisk signal och walk-forward):** båda prövas på de nyaste 30 %, som varken förslaget eller kandidaten sett. Både nuvarande och prövad uppsättning omvandlas med en temperatur som anpassas på träningsdelen.
+   - **Riktningen (räcke 3):** det fullständiga, odämpade förslaget mot nuvarande. Skillnaden i log-loss per lopp får ett bootstrap-intervall som måste ligga **helt under 0**.
+   - **Steget (räcke 6):** den dämpade, tak-begränsade kandidaten mot nuvarande. Den måste vara **bättre** (negativ skillnad) på de osedda loppen.
+   - *Avvikelse från den bokstavliga läsningen i avsnitt 5, med skäl:* att kräva statistisk signifikans för varje enskilt steg på högst 10 % går inte – ett så litet steg ryms alltid inom bruset, så ingenting skulle någonsin antas. Signifikansen krävs därför av den riktning data stödjer; steget (en liten del på vägen dit) måste bara faktiskt vara bättre på osedda lopp. Båda måste gälla. Annars sparas kandidaten som `rejected`.
+6. **Guard** kontrollerar punkterna ovan oberoende (inklusive att taken och summan faktiskt håller). Allt godkänt: kandidaten sparas som ny version med status `active`, förälder = tidigare aktiv version, med orsak och underlag (`evidence`). `app.py` läser den vid nästa spelanalys (provider.refresh).
+7. **Skyddsräcke 10 (spårbarhet):** varje beslut (`adopted`, `rejected`, `rolled_back`, `reset`, `enabled`, `disabled`) skrivs till `tuning_log` med skäl och underlag.
+
+### 18.3 Återrullning (skyddsräcke 8)
+
+`monitor` jämför den aktiva versionen mot sin förälder över lopp som gjorts *med* den aktiva versionen (`parameter_version`). Kontrafaktisk poäng för föräldern räknas om från delpoängen på samma lopp, så jämförelsen är parvis. Först när minst `ROLLBACK_MIN_RACES` (50) lopp finns beslutas något, och högst de första `ROLLBACK_WINDOW` (100) räknas. Är den aktiva versionen **klart sämre** (hela intervallet för skillnaden i log-loss över 0) sätts den till `rolled_back` och föräldern blir åter aktiv. Annars lämnas den.
+
+### 18.4 Manuell reset (skyddsräcke 9)
+
+`reset` (till baseline) eller `reset --to <version>` återställer aktiv uppsättning, sätter ersatta versioner till `rolled_back`, och **stänger av** automatiken tills användaren slår på den igen med `enable`. En webbknapp är inte byggd; kommandona är den manuella vägen.
+
+### 18.5 Lagring
+
+Tabell `tuning_state (key, value, updated_at)` (nyckeln `auto_enabled`) och `tuning_log (id, logged_at, action, version, reason, evidence)`, båda i Knowledge Base via `DatabaseManager`. Parametrar och trösklar i `learning/trav/settings.py`.
+
+### 18.6 Filer
+
+`learning/tuning/adjuster.py` (kandidat: dämpning, tak, summor), `guard.py` (kontroller), `rollback_monitor.py` (beslutsregel), `tuning_log.py` (tillstånd och logg), `tuner.py` (flödet, generellt via adapter), `learning/trav/tuning_adapter.py` (travspecifikt), `script/learning_tuning.py` (`status`, `run`, `monitor`, `enable`, `disable`, `reset`, `log`).
+
+### 18.7 Medvetna begränsningar
+
+- Justeringen kan startas för hand (`run`). Koppling till Learning Engines utvärdering beskrivs i 18.9.
+- Underlaget idag räcker inte: delpoängen loggas sedan 2026-10-12, så 300 lopp tar några veckor. Fram till dess säger `run` att det är för lite data.
+- Poäng räknas om utan expert och med neutralt 50 för saknad trend – samma förenkling som i avsnitt 17.
+
+### 18.8 Test
+
+Testad på syntetiska lopp och mot en syntetisk databas via kommandoraden. Varje skyddsräcke har ett eget prov som fäller en manipulerad kandidat (stegtak, totalt tak, dämpning, summor, avgränsning, meningsfull ändring, data, avkylning, signal, walk-forward). Hela kedjan: avstängd ändrar inget; torrkörning skriver inget; påslagen antar ett dämpat steg på högst 10 % när riktningen är klart bättre; ny justering direkt efteråt stoppas av avkylningen; för lite data ger inget; när nuvarande modell är sanningen antogs ingen justering i 24 av 24 körningar; återrullning sker när en ny version är klart sämre och inte annars; `reset` återställer och pausar automatiken.
+
+### 18.9 Koppling till Learning Engines utvärdering (arkitekturbeslut)
+
+**Mål.** Efter att en utvärdering är klar ska systemet självt pröva återrullning och ny justering, men bara om automatiken är påslagen (`auto_enabled`, avstängd som standard). Då får Learning Engine ett riktigt kretslopp: prognos → utfall → ny utvärdering → eventuellt ny parameteruppsättning → nästa prognos (via `ParameterProvider.refresh()` som redan körs före varje analys).
+
+**Var.** Anropet sitter sist i `LearningEngine.evaluate()`, efter att observationerna är loggade och utvärderingen sparad. Learning Engine känner bara till en enda funktion, `after_evaluation()`, inte till Tuner, adapter eller parametrar. Den som kallar `evaluate` (appen, `reevaluate_*`, CLI) behöver inte ändras.
+
+**Ansvar.**
+- `learning/tuning/auto_runner.py` (generell): `AutoRunner(tuner_factory)`. `after_evaluation()` gör, i ordning: (1) om automatiken är av, returnera direkt (en enda läsning); (2) ta ett lås – körs redan en justering hoppas denna över; (3) kör `monitor` och därefter `run` i en bakgrundstråd som inte är daemon (hinner alltså slutföra vid avslut, så en justering aldrig avbryts halvvägs); (4) fånga alla fel och skriv dem som `error` i justeringsloggen.
+- `learning/trav/tuning_factory.py` (travspecifikt): bygger Tuner med trav-adaptern. Används av både `AutoRunner` och `script/learning_tuning.py`, så ingen kod dupliceras.
+- `learning/trav/auto_hook.py` (travspecifikt): tillhandahåller `after_evaluation()` med trav-fabriken inkopplad, så att `services/learning_engine.py` bara importerar en funktion.
+
+**Garantier.**
+- Ett fel i justeringen kan aldrig stoppa eller ändra utvärderingen eller loggningen av observationer (egen felfångst, separat tråd).
+- Avstängd automatik ger exakt samma beteende som före kopplingen.
+- Alla skyddsräcken i 18.2–18.4 gäller oförändrade; kopplingen lägger bara till *när* de prövas. Avkylning och krav på nya lopp gör att täta utvärderingar (t.ex. `reevaluate_all`) inte ger fler justeringar, bara fler snabbt avvisade prövningar. Dubbla körningar hindras av låset.
+- `monitor` körs före `run`, så en dålig version rullas tillbaka innan en ny justering prövas ovanpå den.
+
+**Begränsning.** Ingen schemaläggning och ingen webbknapp (separata beslut). Körtiden för en justering på 420 syntetiska lopp var under en sekund.
+
+Test av kopplingen: avstängd gör ingenting; påslagen antar en dämpad version i bakgrunden; direkt ny utvärdering stoppas av avkylningen; en tuner som kraschar loggas som `error` utan att något når anroparen; en pågående körning släpper inte in en andra; `LearningEngine.evaluate` anropar kopplingen. Anslutningar byggs i den egna tråden (SQLite delas inte mellan trådar).
