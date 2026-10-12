@@ -46,13 +46,13 @@ class ShadowHorse:
         self.driver_win_pct = driver_win_pct
         self.trainer_win_pct = trainer_win_pct
         self.horse_win_pct = horse_win_pct
-        self._metrics = {}
+        self.metrics = {}
 
     def set_metric(self, key, value):
-        self._metrics[key] = value
+        self.metrics[key] = value
 
     def get_metric(self, key):
-        return self._metrics.get(key)
+        return self.metrics.get(key)
 
     @classmethod
     def from_real_horse(cls, horse):

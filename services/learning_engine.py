@@ -1,4 +1,5 @@
 import json
+from foundation.run_info import dump_metrics
 import os
 from datetime import datetime, timezone
 
@@ -495,6 +496,8 @@ class LearningEngine:
                 "predicted_crowd_index": horse.get("crowd_index"),
                 "predicted_chaos_index": horse.get("chaos_index"),
                 "predicted_expert_index": horse.get("expert_index"),
+                "metrics_json": dump_metrics(horse.get("metrics")),
+                "code_version": prediction.get("code_version"),
                 "chosen_by_system": horse.get("chosen"),
 
                 "actual_finish_order": result.get("finish_order"),

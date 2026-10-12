@@ -37,6 +37,7 @@ OBSERVATION_COLUMNS = [
     "career_earnings", "driver_win_pct", "trainer_win_pct",
     "horse_win_pct", "predicted_total_score", "predicted_crowd_index",
     "predicted_chaos_index", "predicted_expert_index",
+    "metrics_json", "code_version",
     "chosen_by_system", "actual_finish_order", "actual_place",
     "actual_final_odds", "actual_scratched", "actual_galloped",
     "actual_disqualified", "actual_prize_money", "actual_km_time",
@@ -53,6 +54,16 @@ KAMT_V2_FORECAST_COLUMNS = [
     "logged_at", "game_id", "race_number", "race_id", "date",
     "track", "horse_number", "horse_name",
     "predicted_win_probability", "n_simulations",
+]
+
+EXPERT_TIP_COLUMNS = [
+    "fetched_at", "game_id", "date", "source", "article_url", "leg",
+    "horse_number", "horse_name", "signal", "rank", "rank_of", "confidence",
+]
+
+EXPERT_ARTICLE_COLUMNS = [
+    "fetched_at", "game_id", "source", "article_url", "lines",
+    "legs_in_roster", "legs_with_tips", "tips", "unlinked_cues",
 ]
 
 SCHEMA = """
@@ -94,6 +105,7 @@ CREATE TABLE IF NOT EXISTS observations (
     driver_win_pct REAL, trainer_win_pct REAL, horse_win_pct REAL,
     predicted_total_score REAL, predicted_crowd_index REAL,
     predicted_chaos_index REAL, predicted_expert_index REAL,
+    metrics_json TEXT, code_version TEXT,
     chosen_by_system INTEGER, actual_finish_order INTEGER,
     actual_place INTEGER, actual_final_odds REAL,
     actual_scratched INTEGER, actual_galloped INTEGER,
@@ -119,6 +131,26 @@ CREATE INDEX IF NOT EXISTS idx_kamt_v2_game_race
     ON kamt_v2_forecasts(game_id, race_number);
 CREATE INDEX IF NOT EXISTS idx_kamt_v2_horse_name
     ON kamt_v2_forecasts(horse_name);
+
+CREATE TABLE IF NOT EXISTS expert_tips (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    fetched_at TEXT, game_id TEXT, date TEXT, source TEXT,
+    article_url TEXT, leg INTEGER, horse_number INTEGER,
+    horse_name TEXT, signal TEXT, rank INTEGER, rank_of INTEGER,
+    confidence REAL,
+    UNIQUE(fetched_at, game_id, source, leg, horse_number, signal)
+);
+
+CREATE INDEX IF NOT EXISTS idx_expert_tips_game
+    ON expert_tips(game_id, source);
+
+CREATE TABLE IF NOT EXISTS expert_articles (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    fetched_at TEXT, game_id TEXT, source TEXT, article_url TEXT,
+    lines INTEGER, legs_in_roster INTEGER, legs_with_tips INTEGER,
+    tips INTEGER, unlinked_cues INTEGER,
+    UNIQUE(fetched_at, game_id, source, article_url)
+);
 """
 
 
@@ -137,9 +169,22 @@ def get_connection(db_path=None):
     return conn
 
 
+def migrate_schema(conn):
+    #
+    # Lagger till kolumner som tillkommit efter att databasen skapades
+    # (CREATE TABLE IF NOT EXISTS andrar inte en befintlig tabell).
+    #
+    existing = {row[1] for row in conn.execute("PRAGMA table_info(observations)")}
+    for column in ("metrics_json", "code_version"):
+        if column not in existing:
+            conn.execute(f"ALTER TABLE observations ADD COLUMN {column} TEXT")
+    conn.commit()
+
+
 def init_db(db_path=None):
     conn = get_connection(db_path)
     conn.executescript(SCHEMA)
+    migrate_schema(conn)
     conn.commit()
     return conn
 

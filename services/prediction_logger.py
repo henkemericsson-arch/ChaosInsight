@@ -1,4 +1,5 @@
 import json
+from foundation.run_info import code_version, metrics_to_dict
 import os
 from datetime import datetime, timezone
 
@@ -41,6 +42,7 @@ class PredictionLogger:
             "spel": game.name,
             "strategy": strategy,
             "saved_at": timestamp.isoformat(),
+            "code_version": code_version(),
             "max_cost": selection["max_cost"],
             "risk": selection["risk"],
             "spikes": selection["spikes"],
@@ -104,6 +106,7 @@ class PredictionLogger:
                     "total_score": horse.get_metric("total_score"),
                     "crowd_index": horse.get_metric("crowd_index"),
                     "chaos_index": horse.get_metric("chaos_index"),
+                    "metrics": metrics_to_dict(horse.metrics),
                     "chosen": horse.number in chosen_numbers,
                 }
                 #

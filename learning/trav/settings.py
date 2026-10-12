@@ -15,6 +15,17 @@ MODEL_STRATEGIES = {
 }
 
 #
+# Strategier som analyseras var för sig när det gäller vilka hästar
+# som faktiskt valdes (täckning, missanalys). De väljer olika hästar
+# trots att continuous/legacy delar Total Score.
+#
+COVERAGE_STRATEGIES = {
+    "continuous": ("continuous",),
+    "legacy": ("legacy",),
+    "kamt_v2": ("kamt_v2",),
+}
+
+#
 # Galoppbanor som av misstag kommit med i travflödet. Utesluts ur
 # analysen tills de filtreras bort redan vid insamlingen. Jämförs
 # skiftlägesoberoende som delsträng mot banans namn.

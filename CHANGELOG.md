@@ -6,6 +6,12 @@
 - Strukna hästar filtreras bort redan vid parsning (RaceParser) och odds 0 behandlas som struken i SystemGenerator.
 - Lås väljs nu som de två främsta favoriterna enligt odds, rankade på summan av deras Total Score (samma princip som spikar).
 - KAMT v2: hästar utan sannolikhet från RaceAnalyzer tappas inte längre, de får ett lågt standardvärde så att favoriter alltid kan bli spik, lås eller gardering.
+- Expertmodul: ChaosInsight hämtar själv dagens expertartiklar från källorna i config/expert_sources.py (robots.txt respekteras), tolkar texten med en egen regelbaserad tolkare (ingen extern AI-tjänst) och sparar tipsen i Knowledge Base (tabellerna expert_tips och expert_articles). Insamlingen startas automatiskt i bakgrunden när ett spel öppnas.
+- ExpertAnalyzer (Analysis Engine) räknar ut expert_index per häst som en vanlig parameter. Indexet går i observe-only-läge (expert_index_obs, vikt 0) tills Learning Engine visat att det tillför något.
+- Learning Engine etapp 2 steg 1: alla hästmått (metrics_json) och kodversion (code_version) loggas nu i prediktioner och observationer, så att varje parameter kan utvärderas i efterhand.
+- KAMT v2: ShadowHorse har nu samma metrics-attribut som Horse så att skuggsystemet kan loggas med hästmått.
+- Utredning: hästnivåns marknadsresidual testad på 71 201 lopp, ingen signal, parametern byggdes inte (005_Learning_Engine_Design.md §14).
+- Dokumentation: 005_Learning_Engine_Design.md (§14–15) och 006_Expert_Module_Design.md.
 
 ## Version 0.5.0
 **Status:** Klar

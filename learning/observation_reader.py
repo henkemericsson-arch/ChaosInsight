@@ -1,3 +1,4 @@
+from foundation.run_info import load_metrics
 from learning.metrics import normalize
 
 #
@@ -9,6 +10,17 @@ from learning.metrics import normalize
 # hästar, modellens sannolikhet per häst (Total Score normaliserad
 # per lopp) och vem som vann.
 #
+
+
+#
+# Kolumner som följer med varje häst för att kunna jämföra missade
+# vinnare mot valda hästar (missanalysen).
+#
+FEATURE_COLUMNS = (
+    "odds", "bet_percentage", "start_position", "driver_win_pct",
+    "trainer_win_pct", "horse_win_pct", "career_earnings",
+    "shoe_changed", "sulky_changed",
+)
 
 
 def _is_winner(row):
@@ -121,6 +133,7 @@ def build_races(rows, model_strategies, excluded_tracks=(), since=None,
                 ),
                 "start_method": first.get("start_method"),
                 "kaosvarde": first.get("kaosvarde"),
+                "code_version": first.get("code_version"),
             },
             "horses": [
                 {
@@ -130,6 +143,13 @@ def build_races(rows, model_strategies, excluded_tracks=(), since=None,
                     "bet_percentage": r.get("bet_percentage"),
                     "win": 1 if _is_winner(r) else 0,
                     "chosen": bool(r.get("chosen_by_system")),
+                    "galloped": bool(r.get("actual_galloped")),
+                    "disqualified": bool(r.get("actual_disqualified")),
+                    "features": {
+                        name: r.get(name) for name in FEATURE_COLUMNS
+                    },
+                    # Alla delmått prediktionen loggade (tom för äldre rader).
+                    "metrics": load_metrics(r.get("metrics_json")),
                 }
                 for r in active
             ],

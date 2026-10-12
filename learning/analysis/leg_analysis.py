@@ -34,7 +34,7 @@ MARKET_REFERENCE = "mkt_odds"
 # Gemensamma hjälpare
 # ---------------------------------------------------------------------
 
-def _by_odds(horses):
+def by_odds(horses):
     with_odds = [h for h in horses if h["odds"] is not None and h["odds"] > 0]
     return sorted(with_odds, key=lambda h: h["odds"])
 
@@ -82,7 +82,7 @@ def build_leg_records(races, kind):
 
     for (game_id, race_id), race in races.items():
         horses = race["horses"]
-        ranked = _by_odds(horses)
+        ranked = by_odds(horses)
         if len(ranked) < size:
             continue
 
@@ -227,7 +227,7 @@ def kaos_analysis(races, groups=3):
     for race in races.values():
         kaos = race["meta"].get("kaosvarde")
         horses = race["horses"]
-        ranked = _by_odds(horses)
+        ranked = by_odds(horses)
         if kaos is None or len(ranked) < 3:
             continue
 
@@ -286,7 +286,7 @@ def coverage_analysis(races):
             skipped_no_choice += 1
             continue
 
-        ranked = _by_odds(horses)
+        ranked = by_odds(horses)
         if len(ranked) < len(chosen):
             continue
 

@@ -8,6 +8,8 @@ from services.db import (
     BACKFILL_COLUMNS,
     OBSERVATION_COLUMNS,
     KAMT_V2_FORECAST_COLUMNS,
+    EXPERT_TIP_COLUMNS,
+    EXPERT_ARTICLE_COLUMNS,
 )
 
 
@@ -85,9 +87,72 @@ class DatabaseManager:
         #
         insert_row(self._conn, "kamt_v2_forecasts", row, KAMT_V2_FORECAST_COLUMNS, or_ignore=or_ignore)
 
+    def insert_expert_tip(self, row, or_ignore=True):
+        #
+        # Tolkad uppgift fran en expertkalla (expert/collector.py).
+        #
+        insert_row(self._conn, "expert_tips", row, EXPERT_TIP_COLUMNS, or_ignore=or_ignore)
+
+    def insert_expert_article(self, row, or_ignore=True):
+        #
+        # Tolkningstackning per hamtad artikel (hur mycket forstods).
+        #
+        insert_row(self._conn, "expert_articles", row, EXPERT_ARTICLE_COLUMNS, or_ignore=or_ignore)
+
+    def expert_tips_for_game(self, game_id, until=None):
+        #
+        # Alla lagrade experttips for ett spel (som dicts). `until` (ISO-
+        # tid) begransar till hamtningar fore den tidpunkten, sa att en
+        # analys i efterhand inte ser tips som kom senare. Ren lasning.
+        #
+        sql = "SELECT * FROM expert_tips WHERE game_id = ?"
+        params = [game_id]
+        if until is not None:
+            sql += " AND fetched_at <= ?"
+            params.append(until)
+        cursor = self._conn.execute(sql, params)
+        columns = [c[0] for c in cursor.description]
+        return [dict(zip(columns, row)) for row in cursor.fetchall()]
+
+    def expert_articles_for_game(self, game_id):
+        cursor = self._conn.execute(
+            "SELECT * FROM expert_articles WHERE game_id = ? ORDER BY fetched_at", (game_id,)
+        )
+        columns = [c[0] for c in cursor.description]
+        return [dict(zip(columns, row)) for row in cursor.fetchall()]
+
     # ------------------------------------------------------------
     # Lasvagar - flyttade oforandrade fran historical_stats.py
     # ------------------------------------------------------------
+
+    def iter_backfill_legs(self):
+        #
+        # Historiska starter (backfill_starts) grupperade per lopp i
+        # kronologisk ordning (datum, spel, loppnummer). Generator - hela
+        # tabellen läses aldrig in i minnet. Ger (nyckel, [startposter]).
+        #
+        cursor = self._conn.execute(
+            "SELECT date, game_id, race_number, track, horse_name, odds, "
+            "actual_place, actual_finish_order, actual_scratched "
+            "FROM backfill_starts ORDER BY date, game_id, race_number"
+        )
+        columns = [c[0] for c in cursor.description]
+
+        current_key = None
+        current = []
+        for row in cursor:
+            record = dict(zip(columns, row))
+            key = (record["date"], record["game_id"], record["race_number"])
+            if key != current_key:
+                if current:
+                    yield current_key, current
+                current_key = key
+                current = []
+            current.append(record)
+
+        if current:
+            yield current_key, current
+
 
     def observations_for_analysis(self):
         #

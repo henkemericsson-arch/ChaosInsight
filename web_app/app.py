@@ -16,9 +16,10 @@ from services.learning_engine import LearningEngine
 
 from analysis.analysis_engine import AnalysisEngine
 from analysis.register_modules import register_modules
+from expert.auto_collect import start_expert_collection
 from analysis.crowd_engine import CrowdEngine
 from analysis.chaos_engine import ChaosEngine
-from analysis.expert_analyzer import ExpertAnalyzer
+# expert: se analysis/modules/expert_analyzer.py (registreras i register_modules)
 
 from config.bet_types import SYSTEM_BET_TYPES
 from models.game import Game
@@ -678,19 +679,22 @@ def resultat():
     collector = AnalysisDataCollector()
     analysis_data = collector.collect(game)
 
+    # Data Collector: experttips hamtas i bakgrunden (expert/auto_collect.py)
+    start_expert_collection(game.id, game.date, analysis_data.races)
+
     analysis_engine = AnalysisEngine()
     register_modules(analysis_engine)
     analysis_data = analysis_engine.analyze(analysis_data)
 
-    expert_analyzer = ExpertAnalyzer()
+    # expert-instans borttagen: experttips samlas av expert/collector.py
     crowd_engine = CrowdEngine()
     chaos_engine = ChaosEngine()
     score_engine = ScoreEngine()
 
-    expert_tips = expert_analyzer.collect_tips(analysis_data.game.id)
+    # expert-insamling borttagen (script/collect_expert_tips.py)
 
     for leg_index, race in enumerate(analysis_data.races, start=1):
-        expert_analyzer.apply(race, leg_index, expert_tips)
+        # expert-apply borttagen: ExpertAnalyzer kors i Analysis Engine
         crowd_engine.analyze(race)
         chaos_engine.analyze(race)
         score_engine.calculate(race)

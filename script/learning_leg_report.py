@@ -22,17 +22,6 @@ from learning.analysis.leg_report import format_leg_report
 from learning.observation_reader import build_races
 from learning.trav import settings
 
-#
-# Täckningen analyseras per sparad strategi (de väljer olika hästar),
-# urval och kaos per modell (continuous/legacy delar Total Score).
-#
-COVERAGE_STRATEGIES = {
-    "continuous": ("continuous",),
-    "legacy": ("legacy",),
-    "kamt_v2": ("kamt_v2",),
-}
-
-
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--since", help="första loppdatum, ÅÅÅÅ-MM-DD")
@@ -58,7 +47,7 @@ def main():
     )
 
     models, skipped = build_races(rows, settings.MODEL_STRATEGIES, **common)
-    per_strategy, _ = build_races(rows, COVERAGE_STRATEGIES, **common)
+    per_strategy, _ = build_races(rows, settings.COVERAGE_STRATEGIES, **common)
 
     selection = {}
     kaos = {}
