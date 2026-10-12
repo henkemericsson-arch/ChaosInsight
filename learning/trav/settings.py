@@ -49,6 +49,32 @@ DISTANCE_CLASSES = (
 MIN_RACES_FOR_TUNING = 300
 
 #
+# Automatisk justering (etapp 4, 005 avsnitt 5 och 18).
+# TUNING_MIN_NEW_RACES   nya lopp sedan senaste justering (avkylning)
+# TUNING_DAMPING         η: ny = gammal + η * (föreslagen - gammal)
+# TUNING_STEP_CAP        högsta relativa ändring per justering
+# TUNING_TOTAL_CAP       högsta relativa avstånd från baseline
+# ROLLBACK_MIN_RACES     lopp med ny version innan återrullning prövas
+# ROLLBACK_WINDOW        högst så många lopp räknas i uppföljningen
+#
+TUNING_MIN_NEW_RACES = 100
+TUNING_DAMPING = 0.2
+TUNING_STEP_CAP = 0.10
+TUNING_TOTAL_CAP = 0.50
+ROLLBACK_MIN_RACES = 50
+ROLLBACK_WINDOW = 100
+
+#
+# Viktanalys (etapp 2a, 005 avsnitt 17).
+# Färre lopp än WEIGHT_MIN_RACES_REPORT -> bara antalet redovisas.
+# WEIGHT_RIDGE är straffet mot stora koefficienter; WEIGHT_BOOTSTRAP
+# antalet omtagningar för koefficienternas konfidensintervall.
+#
+WEIGHT_MIN_RACES_REPORT = 40
+WEIGHT_RIDGE = 1.0
+WEIGHT_BOOTSTRAP = 60
+
+#
 # Regimer: tidsperioder då systemet byggdes på ett visst sätt.
 # Rapporten delas upp per regim så att lopp från före en större
 # ändring inte blandas med lopp efter den.

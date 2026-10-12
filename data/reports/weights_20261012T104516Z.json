@@ -1,0 +1,21 @@
+{
+  "n_races": 0,
+  "min_report": 40,
+  "min_tuning": 300,
+  "too_few": true,
+  "preliminary": true,
+  "walk_forward": null,
+  "coefficients": null,
+  "proposal": null,
+  "expert": null,
+  "meta": {
+    "dropped": {
+      "saknar delpoäng (äldre lopp)": 299,
+      "färre än 2 hästar": 0
+    },
+    "info": {
+      "trend_imputed_races": 0,
+      "versions": {}
+    }
+  }
+}

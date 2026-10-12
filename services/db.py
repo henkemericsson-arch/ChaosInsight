@@ -70,6 +70,8 @@ PARAMETER_SET_COLUMNS = [
     "version", "created_at", "parent", "status", "params", "reason", "evidence",
 ]
 
+TUNING_LOG_COLUMNS = ["logged_at", "action", "version", "reason", "evidence"]
+
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS backfill_starts (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -160,6 +162,15 @@ CREATE TABLE IF NOT EXISTS parameter_sets (
     version INTEGER PRIMARY KEY,
     created_at TEXT, parent INTEGER, status TEXT,
     params TEXT, reason TEXT, evidence TEXT
+);
+
+CREATE TABLE IF NOT EXISTS tuning_state (
+    key TEXT PRIMARY KEY, value TEXT, updated_at TEXT
+);
+
+CREATE TABLE IF NOT EXISTS tuning_log (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    logged_at TEXT, action TEXT, version INTEGER, reason TEXT, evidence TEXT
 );
 """
 

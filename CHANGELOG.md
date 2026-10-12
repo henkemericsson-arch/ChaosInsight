@@ -17,6 +17,11 @@
 - Delpoäng per häst (odds, streck, trend, startspår, kusk, form, distans, bana, galopp, tempo, datatäckning) sparas nu som mått och hamnar i metrics_json, vilket är förutsättningen för viktanalysen (etapp 2a). Äldre lopp saknar dem.
 - script/learning_parameters.py visar aktiv parameteruppsättning och alla versioner.
 - Dokumentation: 005_Learning_Engine_Design.md avsnitt 16.
+- Viktanalys (etapp 2a): conditional logit på loggade delpoäng, walk-forward mot nuvarande Total Score, koefficienter med bootstrap-KI, förslag i parametrarnas termer och prov av expertindexets mervärde (script/learning_weight_report.py, learning/analysis/weight_analysis.py, learning/trav/weight_features.py). Läser bara; ändrar inget i systemet.
+
+## Version 0.5.1
+
+- Automatisk justering (etapp 4): dämpad, skyddad parameterjustering med återrullning (learning/tuning), AV som standard. Se 005 §18.
 
 ## Version 0.5.0
 **Status:** Klar

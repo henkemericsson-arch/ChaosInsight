@@ -11,6 +11,7 @@ from services.db import (
     EXPERT_TIP_COLUMNS,
     EXPERT_ARTICLE_COLUMNS,
     PARAMETER_SET_COLUMNS,
+    TUNING_LOG_COLUMNS,
 )
 
 
@@ -146,6 +147,33 @@ class DatabaseManager:
         self._conn.execute(
             "UPDATE parameter_sets SET status = ? WHERE version = ?", (status, version)
         )
+
+    # ------------------------------------------------------------
+    # Automatisk justering (Learning Engine etapp 4): tillstand och logg
+    # ------------------------------------------------------------
+
+    def tuning_state_get(self, key):
+        row = self._conn.execute(
+            "SELECT value FROM tuning_state WHERE key = ?", (key,)
+        ).fetchone()
+        return row[0] if row else None
+
+    def tuning_state_set(self, key, value, updated_at):
+        self._conn.execute(
+            "INSERT OR REPLACE INTO tuning_state (key, value, updated_at) VALUES (?, ?, ?)",
+            (key, value, updated_at),
+        )
+        self._conn.commit()
+
+    def insert_tuning_log(self, row):
+        insert_row(self._conn, "tuning_log", row, TUNING_LOG_COLUMNS)
+
+    def tuning_log_entries(self, limit=20):
+        cursor = self._conn.execute(
+            "SELECT * FROM tuning_log ORDER BY id DESC LIMIT ?", (limit,)
+        )
+        columns = [c[0] for c in cursor.description]
+        return [dict(zip(columns, row)) for row in cursor.fetchall()]
 
     # ------------------------------------------------------------
     # Lasvagar - flyttade oforandrade fran historical_stats.py
