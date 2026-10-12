@@ -10,6 +10,7 @@ from services.db import (
     KAMT_V2_FORECAST_COLUMNS,
     EXPERT_TIP_COLUMNS,
     EXPERT_ARTICLE_COLUMNS,
+    PARAMETER_SET_COLUMNS,
 )
 
 
@@ -120,6 +121,31 @@ class DatabaseManager:
         )
         columns = [c[0] for c in cursor.description]
         return [dict(zip(columns, row)) for row in cursor.fetchall()]
+
+    # ------------------------------------------------------------
+    # Parameteruppsattningar (Learning Engine, parameter_sets)
+    # ------------------------------------------------------------
+
+    def insert_parameter_set(self, row):
+        insert_row(self._conn, "parameter_sets", row, PARAMETER_SET_COLUMNS)
+
+    def parameter_sets(self):
+        cursor = self._conn.execute("SELECT * FROM parameter_sets ORDER BY version")
+        columns = [c[0] for c in cursor.description]
+        return [dict(zip(columns, row)) for row in cursor.fetchall()]
+
+    def parameter_set(self, version):
+        cursor = self._conn.execute(
+            "SELECT * FROM parameter_sets WHERE version = ?", (version,)
+        )
+        columns = [c[0] for c in cursor.description]
+        row = cursor.fetchone()
+        return dict(zip(columns, row)) if row else None
+
+    def update_parameter_status(self, version, status):
+        self._conn.execute(
+            "UPDATE parameter_sets SET status = ? WHERE version = ?", (status, version)
+        )
 
     # ------------------------------------------------------------
     # Lasvagar - flyttade oforandrade fran historical_stats.py

@@ -12,6 +12,11 @@
 - KAMT v2: ShadowHorse har nu samma metrics-attribut som Horse så att skuggsystemet kan loggas med hästmått.
 - Utredning: hästnivåns marknadsresidual testad på 71 201 lopp, ingen signal, parametern byggdes inte (005_Learning_Engine_Design.md §14).
 - Dokumentation: 005_Learning_Engine_Design.md (§14–15) och 006_Expert_Module_Design.md.
+- Parameterlager: Crowd-, Chaos- och Score-vikterna läses nu från en versionerad parameteruppsättning (tabellen parameter_sets, ParameterStore/ParameterProvider i learning/tuning/, baseline i learning/trav/parameter_schema.py) i stället för klasskonstanter. Version 0 (baseline) är dagens värden och oföränderlig; Total Score är identisk med tidigare. Grunden för Learning Engine etapp 4.
+- parameter_version sparas i prediktionsfiler och observationer (ny kolumn i observations).
+- Delpoäng per häst (odds, streck, trend, startspår, kusk, form, distans, bana, galopp, tempo, datatäckning) sparas nu som mått och hamnar i metrics_json, vilket är förutsättningen för viktanalysen (etapp 2a). Äldre lopp saknar dem.
+- script/learning_parameters.py visar aktiv parameteruppsättning och alla versioner.
+- Dokumentation: 005_Learning_Engine_Design.md avsnitt 16.
 
 ## Version 0.5.0
 **Status:** Klar

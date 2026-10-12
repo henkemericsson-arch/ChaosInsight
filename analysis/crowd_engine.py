@@ -1,4 +1,5 @@
 from analysis.modules.base_analyzer import BaseAnalyzer
+from learning.trav.parameters import get_provider as get_parameter_provider
 
 
 class CrowdEngine(BaseAnalyzer):
@@ -40,13 +41,17 @@ class CrowdEngine(BaseAnalyzer):
     #   - social konsensus
     #
 
-    ODDS_WEIGHT = 20
-    STRECK_WEIGHT = 10
-    TREND_WEIGHT = 10
-    EXPERT_WEIGHT = 5
+    #
+    # Vikterna (odds, streck, trend, expert) kommer från ParameterProvider;
+    # baseline ligger i learning/trav/parameter_schema.py.
+    #
+
+    def __init__(self, parameters=None):
+        self.parameters = parameters or get_parameter_provider()
 
     def analyze(self, race):
         horses = race.horses
+        weights = self.parameters.group("crowd")
 
         odds_scores = self._score_odds(horses)
         trend_scores = self._score_trend(horses)
@@ -58,30 +63,38 @@ class CrowdEngine(BaseAnalyzer):
             horse.odds_trend is not None for horse in horses
         )
 
-        total_weight = self.ODDS_WEIGHT + self.STRECK_WEIGHT
+        total_weight = weights["odds"] + weights["streck"]
 
         if has_trend_data:
-            total_weight += self.TREND_WEIGHT
+            total_weight += weights["trend"]
 
         if has_expert_data:
-            total_weight += self.EXPERT_WEIGHT
+            total_weight += weights["expert"]
 
         for horse in horses:
             odds_score = odds_scores.get(horse.number, 0)
             streck_score = horse.bet_percentage or 0
 
+            #
+            # Delpoängen sparas som mått så att Learning Engine kan se
+            # vad varje signal bidrog med (005 avsnitt 16.4).
+            #
+            horse.set_metric("crowd_odds_score", odds_score)
+            horse.set_metric("crowd_streck_score", streck_score)
+
             weighted_sum = (
-                (odds_score * self.ODDS_WEIGHT)
-                + (streck_score * self.STRECK_WEIGHT)
+                (odds_score * weights["odds"])
+                + (streck_score * weights["streck"])
             )
 
             if has_trend_data:
                 trend_score = trend_scores.get(horse.number, 50.0)
-                weighted_sum += trend_score * self.TREND_WEIGHT
+                horse.set_metric("crowd_trend_score", trend_score)
+                weighted_sum += trend_score * weights["trend"]
 
             if has_expert_data:
                 expert_score = horse.get_metric("expert_index")
-                weighted_sum += expert_score * self.EXPERT_WEIGHT
+                weighted_sum += expert_score * weights["expert"]
 
             crowd_index = weighted_sum / total_weight
             horse.set_metric("crowd_index", round(crowd_index, 1))

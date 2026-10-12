@@ -1,3 +1,6 @@
+from learning.trav.parameters import get_provider as get_parameter_provider
+
+
 class ScoreEngine:
 
     #
@@ -11,10 +14,17 @@ class ScoreEngine:
     # ChaosEngine.
     #
 
-    CROWD_WEIGHT = 0.50
-    CHAOS_WEIGHT = 0.50
+    #
+    # Vikterna kommer från ParameterProvider (score.crowd, score.chaos);
+    # baseline 0,50 / 0,50 ligger i learning/trav/parameter_schema.py.
+    #
+
+    def __init__(self, parameters=None):
+        self.parameters = parameters or get_parameter_provider()
 
     def calculate(self, race):
+
+        weights = self.parameters.group("score")
 
         for horse in race.horses:
 
@@ -22,8 +32,8 @@ class ScoreEngine:
             chaos_index = horse.get_metric("chaos_index")
 
             total_score = (
-                (crowd_index * self.CROWD_WEIGHT)
-                + (chaos_index * self.CHAOS_WEIGHT)
+                (crowd_index * weights["crowd"])
+                + (chaos_index * weights["chaos"])
             )
 
             horse.set_metric("total_score", round(total_score, 1))

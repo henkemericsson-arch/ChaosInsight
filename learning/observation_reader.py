@@ -134,6 +134,7 @@ def build_races(rows, model_strategies, excluded_tracks=(), since=None,
                 "start_method": first.get("start_method"),
                 "kaosvarde": first.get("kaosvarde"),
                 "code_version": first.get("code_version"),
+                "parameter_version": first.get("parameter_version"),
             },
             "horses": [
                 {

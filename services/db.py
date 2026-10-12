@@ -37,7 +37,7 @@ OBSERVATION_COLUMNS = [
     "career_earnings", "driver_win_pct", "trainer_win_pct",
     "horse_win_pct", "predicted_total_score", "predicted_crowd_index",
     "predicted_chaos_index", "predicted_expert_index",
-    "metrics_json", "code_version",
+    "metrics_json", "code_version", "parameter_version",
     "chosen_by_system", "actual_finish_order", "actual_place",
     "actual_final_odds", "actual_scratched", "actual_galloped",
     "actual_disqualified", "actual_prize_money", "actual_km_time",
@@ -64,6 +64,10 @@ EXPERT_TIP_COLUMNS = [
 EXPERT_ARTICLE_COLUMNS = [
     "fetched_at", "game_id", "source", "article_url", "lines",
     "legs_in_roster", "legs_with_tips", "tips", "unlinked_cues",
+]
+
+PARAMETER_SET_COLUMNS = [
+    "version", "created_at", "parent", "status", "params", "reason", "evidence",
 ]
 
 SCHEMA = """
@@ -105,7 +109,7 @@ CREATE TABLE IF NOT EXISTS observations (
     driver_win_pct REAL, trainer_win_pct REAL, horse_win_pct REAL,
     predicted_total_score REAL, predicted_crowd_index REAL,
     predicted_chaos_index REAL, predicted_expert_index REAL,
-    metrics_json TEXT, code_version TEXT,
+    metrics_json TEXT, code_version TEXT, parameter_version INTEGER,
     chosen_by_system INTEGER, actual_finish_order INTEGER,
     actual_place INTEGER, actual_final_odds REAL,
     actual_scratched INTEGER, actual_galloped INTEGER,
@@ -151,6 +155,12 @@ CREATE TABLE IF NOT EXISTS expert_articles (
     tips INTEGER, unlinked_cues INTEGER,
     UNIQUE(fetched_at, game_id, source, article_url)
 );
+
+CREATE TABLE IF NOT EXISTS parameter_sets (
+    version INTEGER PRIMARY KEY,
+    created_at TEXT, parent INTEGER, status TEXT,
+    params TEXT, reason TEXT, evidence TEXT
+);
 """
 
 
@@ -178,6 +188,8 @@ def migrate_schema(conn):
     for column in ("metrics_json", "code_version"):
         if column not in existing:
             conn.execute(f"ALTER TABLE observations ADD COLUMN {column} TEXT")
+    if "parameter_version" not in existing:
+        conn.execute("ALTER TABLE observations ADD COLUMN parameter_version INTEGER")
     conn.commit()
 
 

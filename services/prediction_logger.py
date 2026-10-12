@@ -1,5 +1,6 @@
 import json
 from foundation.run_info import code_version, metrics_to_dict
+from learning.trav.parameters import get_provider as get_parameter_provider
 import os
 from datetime import datetime, timezone
 
@@ -43,6 +44,7 @@ class PredictionLogger:
             "strategy": strategy,
             "saved_at": timestamp.isoformat(),
             "code_version": code_version(),
+            "parameter_version": get_parameter_provider().version,
             "max_cost": selection["max_cost"],
             "risk": selection["risk"],
             "spikes": selection["spikes"],

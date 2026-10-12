@@ -17,6 +17,7 @@ from services.learning_engine import LearningEngine
 from analysis.analysis_engine import AnalysisEngine
 from analysis.register_modules import register_modules
 from expert.auto_collect import start_expert_collection
+from learning.trav.parameters import get_provider as get_parameter_provider
 from analysis.crowd_engine import CrowdEngine
 from analysis.chaos_engine import ChaosEngine
 # expert: se analysis/modules/expert_analyzer.py (registreras i register_modules)
@@ -677,6 +678,7 @@ def resultat():
     )
 
     collector = AnalysisDataCollector()
+    get_parameter_provider().refresh()
     analysis_data = collector.collect(game)
 
     # Data Collector: experttips hamtas i bakgrunden (expert/auto_collect.py)

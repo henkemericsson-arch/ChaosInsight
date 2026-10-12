@@ -2,6 +2,7 @@ import math
 
 from analysis.modules.base_analyzer import BaseAnalyzer
 from services.historical_stats import get_default_provider
+from learning.trav.parameters import get_provider as get_parameter_provider
 
 
 class ChaosEngine(BaseAnalyzer):
@@ -38,35 +39,33 @@ class ChaosEngine(BaseAnalyzer):
     # utan att paverka sjalva poangen.
     #
 
-    START_POSITION_WEIGHT = 8
-    DRIVER_FORM_WEIGHT = 8
-    HORSE_FORM_WEIGHT = 10
-    TRAINER_FORM_WEIGHT = 5
-    DISTANCE_WEIGHT = 5
-    TRACK_CONDITION_WEIGHT = 4
-    GALLOP_RISK_WEIGHT = 5
-    TEMPO_WEIGHT = 5
+    #
+    # Vikterna kommer från ParameterProvider; baseline ligger i
+    # learning/trav/parameter_schema.py.
+    #
 
     NEUTRAL_SCORE = 50
     DISTANCE_MARGIN = 100
 
-    def __init__(self, historical_stats=None):
+    def __init__(self, historical_stats=None, parameters=None):
         self.historical_stats = historical_stats or get_default_provider()
+        self.parameters = parameters or get_parameter_provider()
 
     def analyze(self, race):
         horses = race.horses
+        weights = self.parameters.group("chaos")
 
         position_scores = self._score_start_positions(horses)
 
         total_weight = (
-            self.START_POSITION_WEIGHT
-            + self.DRIVER_FORM_WEIGHT
-            + self.HORSE_FORM_WEIGHT
-            + self.TRAINER_FORM_WEIGHT
-            + self.DISTANCE_WEIGHT
-            + self.TRACK_CONDITION_WEIGHT
-            + self.GALLOP_RISK_WEIGHT
-            + self.TEMPO_WEIGHT
+            weights["start_position"]
+            + weights["driver_form"]
+            + weights["horse_form"]
+            + weights["trainer_form"]
+            + weights["distance"]
+            + weights["track_condition"]
+            + weights["gallop_risk"]
+            + weights["tempo"]
         )
 
         #
@@ -116,18 +115,32 @@ class ChaosEngine(BaseAnalyzer):
             tempo_score = score_or_neutral(tempo_scores.get(horse.number))
 
             chaos_index = (
-                (position_score * self.START_POSITION_WEIGHT)
-                + (driver_score * self.DRIVER_FORM_WEIGHT)
-                + (horse_score * self.HORSE_FORM_WEIGHT)
-                + (trainer_score * self.TRAINER_FORM_WEIGHT)
-                + (distance_score * self.DISTANCE_WEIGHT)
-                + (track_condition_score * self.TRACK_CONDITION_WEIGHT)
-                + (gallop_score * self.GALLOP_RISK_WEIGHT)
-                + (tempo_score * self.TEMPO_WEIGHT)
+                (position_score * weights["start_position"])
+                + (driver_score * weights["driver_form"])
+                + (horse_score * weights["horse_form"])
+                + (trainer_score * weights["trainer_form"])
+                + (distance_score * weights["distance"])
+                + (track_condition_score * weights["track_condition"])
+                + (gallop_score * weights["gallop_risk"])
+                + (tempo_score * weights["tempo"])
             ) / total_weight
 
             horse.set_metric("chaos_index", round(chaos_index, 1))
             horse.set_metric("data_coverage", f"{8 - missing}/8")
+
+            #
+            # Delpoängen sparas som mått (005 avsnitt 16.4). Saknad
+            # komponent har fått neutralt värde, precis som i beräkningen.
+            #
+            horse.set_metric("data_coverage_n", 8 - missing)
+            horse.set_metric("chaos_start_position_score", position_score)
+            horse.set_metric("chaos_driver_form_score", driver_score)
+            horse.set_metric("chaos_horse_form_score", horse_score)
+            horse.set_metric("chaos_trainer_form_score", trainer_score)
+            horse.set_metric("chaos_distance_score", distance_score)
+            horse.set_metric("chaos_track_condition_score", track_condition_score)
+            horse.set_metric("chaos_gallop_risk_score", gallop_score)
+            horse.set_metric("chaos_tempo_score", tempo_score)
 
         kaosvarde = self._calculate_kaosvarde(horses)
         race.kaosvarde = kaosvarde

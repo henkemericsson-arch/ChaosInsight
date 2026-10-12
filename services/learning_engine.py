@@ -498,6 +498,7 @@ class LearningEngine:
                 "predicted_expert_index": horse.get("expert_index"),
                 "metrics_json": dump_metrics(horse.get("metrics")),
                 "code_version": prediction.get("code_version"),
+                "parameter_version": prediction.get("parameter_version"),
                 "chosen_by_system": horse.get("chosen"),
 
                 "actual_finish_order": result.get("finish_order"),
